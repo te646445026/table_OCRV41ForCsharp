@@ -238,6 +238,8 @@ namespace table_OCRV41ForCsharp
                 try
                 {
                     tableRec1.GetRow(21).GetCell(3).SetText(jsonMessage["next_year"]);
+                    //右对齐
+                    tableRec1.GetRow(21).GetCell(3).Paragraphs[0].Alignment = ParagraphAlignment.RIGHT;
                 }
                 catch
                 {
@@ -248,6 +250,9 @@ namespace table_OCRV41ForCsharp
                 {
                     tableRec1.GetRow(22).GetCell(1).Paragraphs[0].CreateRun().SetText(jsonMessage["date"]);
                     tableRec1.GetRow(22).GetCell(3).Paragraphs[0].CreateRun().SetText(jsonMessage["date"]);
+                    //右对齐
+                    tableRec1.GetRow(22).GetCell(1).Paragraphs[0].Alignment = ParagraphAlignment.RIGHT;
+                    tableRec1.GetRow(22).GetCell(3).Paragraphs[0].Alignment = ParagraphAlignment.RIGHT;
                 }
                 catch
                 {
@@ -257,10 +262,10 @@ namespace table_OCRV41ForCsharp
                 try
                 {
                     paragraphsRec[0].CreateRun().SetText(jsonMessage["reportNum2"]);
-                    if (jsonMessage["xiansuqiDirectionForReport"] == "双向")
-                    {
-                        paragraphsRec[0].CreateRun().SetText("D");
-                    }
+                    //if (jsonMessage["xiansuqiDirectionForReport"] == "双向")
+                    //{
+                    //    paragraphsRec[0].CreateRun().SetText("D");
+                    //}
                 }
                 catch
                 {
@@ -397,6 +402,11 @@ namespace table_OCRV41ForCsharp
                     tableRep1.GetRow(23).GetCell(1).Paragraphs[0].CreateRun().SetText(jsonMessage["shenhe_date"]);
                     tableRep1.GetRow(24).GetCell(1).Paragraphs[0].CreateRun().SetText(jsonMessage["shenhe_date"]);
                     tableRep1.GetRow(22).GetCell(2).Paragraphs[3].CreateRun().SetText(jsonMessage["shenhe_date"]);
+
+                    //右对齐
+                    tableRep1.GetRow(22).GetCell(1).Paragraphs[0].Alignment = ParagraphAlignment.RIGHT;
+                    tableRep1.GetRow(23).GetCell(1).Paragraphs[0].Alignment = ParagraphAlignment.RIGHT;
+                    tableRep1.GetRow(24).GetCell(1).Paragraphs[0].Alignment = ParagraphAlignment.RIGHT;
                 }
                 catch
                 {
@@ -406,10 +416,10 @@ namespace table_OCRV41ForCsharp
                 try
                 {
                     paragraphsRep[0].CreateRun().SetText(jsonMessage["reportNum2"]);
-                    if (jsonMessage["xiansuqiDirectionForReport"] == "双向")
-                    {
-                        paragraphsRep[0].CreateRun().SetText("D");
-                    }
+                    //if (jsonMessage["xiansuqiDirectionForReport"] == "双向")
+                    //{
+                    //    paragraphsRep[0].CreateRun().SetText("D");
+                    //}
                 }
                 catch
                 {
