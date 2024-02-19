@@ -12,6 +12,7 @@ using System.Windows.Forms;
 using System.Collections;
 using NPOI.XWPF.UserModel;
 using Org.BouncyCastle.Asn1.X509;
+using System.Runtime.InteropServices.ComTypes;
 
 namespace table_OCRV41ForCsharp
 {
@@ -21,38 +22,42 @@ namespace table_OCRV41ForCsharp
         const string API_KEY = "Et4nGdx8ecc5chOnoilbxEyX";
         const string SECRET_KEY = "505cd0eiUZt22mPzelDGVrWzN7ELwteh";
         const string REQUEST_URL = "https://aip.baidubce.com/rest/2.0/ocr/v1/table";
+
+        public class PathMessage
+        {
+            public string FolderPath { get; set; }
+            public string DefaultJsonFilePath { get; set; }
+            public string DataFilePath { get; set; }
+            public string DataJsonFilePath { get; set; }
+        }
         
         [STAThread]
         static void Main(string[] args)
         {
-            string workPath = "";
-            Console.WriteLine("已生成识别结果请按0，未生成请按1：");
-            string situation = Console.ReadLine();
-
-            string data_dir="" ;
+            string workPath ;
+            string data_dir = "" ;
             string folder_dir = "";
+            
             ArrayList result_dir = new ArrayList();
             Dictionary<string, string> jsonMessage = new Dictionary<string, string>();
 
+            PathMessage path ;
+
+            path = CheckDefaultPath(@"E:\PythonProject\限速器自动化");
+            workPath = path.FolderPath ;
+            
+
+            Console.WriteLine("已生成识别结果请按0，未生成请按1：");
+            string situation = Console.ReadLine();
+
             if (situation == "1")
             {
-                FolderBrowserDialog folder1 = new FolderBrowserDialog();
-                folder1.Description = "请选择需要识别的图片所在文件夹";
-
-                if (folder1.ShowDialog() == DialogResult.OK)
-                {
-                    data_dir = folder1.SelectedPath + "\\";
-                }
-                FolderBrowserDialog folder2 = new FolderBrowserDialog();
-                folder2.Description = "请选择识别结果存放的文件夹";
-
-                if (folder2.ShowDialog() == DialogResult.OK)
-                {
-                    folder_dir = folder2.SelectedPath + "\\";
-                }
-
-                workPath = Path.GetDirectoryName(folder1.SelectedPath);
-                Console.WriteLine("当前工作路径为：" + workPath);
+                //从json文件中读取
+             
+                data_dir =  path.DataFilePath+"\\";
+                
+                folder_dir =  path.DataJsonFilePath+"\\";
+               
 
             }
             else
@@ -74,9 +79,6 @@ namespace table_OCRV41ForCsharp
                         result_dir.Add(fileName); // 获取用户选择的多个文件名的数组                                                              // 处理用户选择的文件路径
                     }
                 }
-
-                workPath = Path.GetDirectoryName( Path.GetDirectoryName(fileDialog.FileNames[0]));
-                Console.WriteLine("当前工作路径为：" + workPath);
             }
             if (situation == "1")
             {
@@ -498,6 +500,67 @@ namespace table_OCRV41ForCsharp
             request.AddParameter("return_excel", "false");
             IRestResponse response = client.Execute(request);
             return response.Content;
+        }
+
+        /**
+       * 检查默认配置文件，如果存在，则读取对应部分作为默认路径，如果不存在，则新建并要求用户选择路径作为默认路径
+       * @param 可选参数defaultPath 默认为调试用的路径
+       * @return 返回一个对象，FolderPath为工作路径，DefaultJsonFilePath为默认参数的json文件路径，
+       *                DataFilePath为截图保存文件的路径,DataJsonFilePath为识别结果保存的文件路径
+       */
+        static PathMessage CheckDefaultPath(string defaultFolderPath = "")
+        {
+            PathMessage path = new PathMessage();
+            
+            
+            if (string.IsNullOrEmpty(defaultFolderPath))
+            {
+                path.FolderPath = System.Environment.CurrentDirectory;
+            }
+            else
+            {
+                path.FolderPath = defaultFolderPath;
+            }
+            Console.WriteLine($"当前工作文件夹目录为：{path.FolderPath}");
+
+
+
+            //检查是否有配置文件，没有就生成，并选择路径
+            path.DefaultJsonFilePath = path.FolderPath + @"\default.json";
+         
+
+            if (!File.Exists(path.DefaultJsonFilePath))
+            {               
+                //选择默认路径
+                FolderBrowserDialog folder1 = new FolderBrowserDialog();
+                folder1.Description = "请选择需要识别的图片所在文件夹";
+
+                if (folder1.ShowDialog() == DialogResult.OK)
+                {
+                    path.DataFilePath = folder1.SelectedPath ;
+                }
+
+                FolderBrowserDialog folder2 = new FolderBrowserDialog();
+                folder2.Description = "请选择识别结果存放的文件夹";
+
+                if (folder2.ShowDialog() == DialogResult.OK)
+                {
+                    path.DataJsonFilePath = folder2.SelectedPath ;
+                }
+                //把默认路径写入json文件中
+                string defaultStr = JsonConvert.SerializeObject(path);
+                File.WriteAllText(path.DefaultJsonFilePath, defaultStr);                            
+            }
+            else
+            {
+                //读取DataFilePath和DataJsonFilePath
+                string defaultStr = File.ReadAllText(path.DefaultJsonFilePath);
+                PathMessage defaultStrPath = JsonConvert.DeserializeObject<PathMessage>(defaultStr);
+                path.DataFilePath = defaultStrPath.DataFilePath;
+                path.DataJsonFilePath= defaultStrPath.DataJsonFilePath;
+            }
+
+            return  path;
         }
 
         static Dictionary<string, string> JsonMessage(string filePath)
