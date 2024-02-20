@@ -7,7 +7,6 @@ using System.Threading;
 using RestSharp;//依赖版本106.15.0 https://www.nuget.org/packages/RestSharp/106.15.0
 using Newtonsoft.Json; //https://www.nuget.org/packages/Newtonsoft.Json
 using Newtonsoft.Json.Linq;
-using System.Windows.Forms;
 using System.Collections;
 using NPOI.XWPF.UserModel;
 
@@ -24,16 +23,16 @@ namespace table_OCRV41ForCsharp
 
         public class PathMessage
         {
-            public string FolderPath { get; set; }
-            public string DefaultJsonFilePath { get; set; }
-            public string DataFilePath { get; set; }
-            public string DataJsonFilePath { get; set; }
+            public string? FolderPath { get; set; }
+            public string? DefaultJsonFilePath { get; set; }
+            public string? DataFilePath { get; set; }
+            public string? DataJsonFilePath { get; set; }
         }
-        
+
         [STAThread]
         static void Main(string[] args)
         {
-            string workPath ;
+            string? workPath ;
             string data_dir = "" ;
             string folder_dir = "";
             
@@ -43,11 +42,11 @@ namespace table_OCRV41ForCsharp
             PathMessage path ;
 
             path = CheckDefaultPath();
-            workPath = path.FolderPath ;
+            workPath = path.FolderPath;
             
 
             Console.WriteLine("已生成识别结果请按0，未生成请按1：");
-            string situation = Console.ReadLine();
+            string? situation = Console.ReadLine();
 
             if (situation == "1")
             {
@@ -63,7 +62,7 @@ namespace table_OCRV41ForCsharp
             {
                 // 创建 OpenFileDialog 对象
                 OpenFileDialog fileDialog = new OpenFileDialog();
-
+              
                 // 设置对话框的属性
                 fileDialog.Multiselect = true; // 允许多选文件
                 fileDialog.Title = "请选择文件"; // 设置对话框的标题
@@ -557,7 +556,7 @@ namespace table_OCRV41ForCsharp
             {
                 //读取DataFilePath和DataJsonFilePath
                 string defaultStr = File.ReadAllText(path.DefaultJsonFilePath);
-                PathMessage defaultStrPath = JsonConvert.DeserializeObject<PathMessage>(defaultStr);
+                PathMessage? defaultStrPath = JsonConvert.DeserializeObject<PathMessage>(defaultStr);
                 path.DataFilePath = defaultStrPath.DataFilePath;
                 path.DataJsonFilePath= defaultStrPath.DataJsonFilePath;
                 //确定工作路径
@@ -572,7 +571,7 @@ namespace table_OCRV41ForCsharp
         {
             Dictionary<string, string> result = new Dictionary<string, string>();
             string json = File.ReadAllText(filePath);
-            JObject objs = JObject.Parse(json);
+            JObject? objs = JObject.Parse(json);
             string deviceCode;
             try
             {
@@ -665,7 +664,7 @@ namespace table_OCRV41ForCsharp
                 reportNum = "/";
                 reportNum2 = "/";
             }
-            string date;
+            string? date;
             string next_year;
             string next_year_flag;
             string shenhe_date;
@@ -689,7 +688,7 @@ namespace table_OCRV41ForCsharp
                     date = matches[0].Value + "年" + matches[1].Value + "月" + matches[2].Value + "日";
                     DateTime dateforcell = new DateTime(year, month, day);
                     //计算2年后的日期
-                    string nextdate;
+                    string? nextdate;
                     Console.WriteLine("请输入下次检验日期间隔，1代表1年，2代表2年: ");
                     nextdate = Console.ReadLine();
                     while (nextdate != "1" & nextdate != "2")
