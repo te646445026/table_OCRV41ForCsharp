@@ -1021,6 +1021,7 @@ namespace table_OCRV41ForCsharp
                     int month = int.Parse(matches[1].Value);
                     int day = int.Parse(matches[2].Value);
                     date = matches[0].Value + "年" + matches[1].Value + "月" + matches[2].Value + "日";
+                    Console.WriteLine("检验时间为："+date);
                     DateTime dateforcell = new DateTime(year, month, day);
                     //计算2年后的日期
                     string? nextdate;
