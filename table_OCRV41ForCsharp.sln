@@ -5,7 +5,9 @@ VisualStudioVersion = 17.8.34316.72
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "table_OCRV41ForCsharp", "table_OCRV41ForCsharp\table_OCRV41ForCsharp.csproj", "{D6271D4C-D709-4FC7-9704-6310B99F8FD5}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "table_OCRV41ForCsharp_net", "table_OCRV41ForCsharp_net\table_OCRV41ForCsharp_net.csproj", "{AA6EC01F-C323-4D3F-AB2F-A19DC02C5F9D}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "table_OCRV41ForCsharp_net", "table_OCRV41ForCsharp_net\table_OCRV41ForCsharp_net.csproj", "{AA6EC01F-C323-4D3F-AB2F-A19DC02C5F9D}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "table_OCRV41ForCsharp_winform", "table_OCRV41ForCsharp_winform\table_OCRV41ForCsharp_winform.csproj", "{E51C89D4-DF1C-4DC5-9CE6-244A587FF9BF}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -21,6 +23,10 @@ Global
 		{AA6EC01F-C323-4D3F-AB2F-A19DC02C5F9D}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{AA6EC01F-C323-4D3F-AB2F-A19DC02C5F9D}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{AA6EC01F-C323-4D3F-AB2F-A19DC02C5F9D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E51C89D4-DF1C-4DC5-9CE6-244A587FF9BF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E51C89D4-DF1C-4DC5-9CE6-244A587FF9BF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E51C89D4-DF1C-4DC5-9CE6-244A587FF9BF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E51C89D4-DF1C-4DC5-9CE6-244A587FF9BF}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -115,8 +115,10 @@ namespace table_OCRV41ForCsharp
                 // 把识别结果的json文档信息提取出来
                 jsonMessage = JsonMessage(jsonPath);
                 //根据模板，写入对应的word文档里面
-                FileStream docFlieRec = new FileStream(workPath+"\\限速器测试记录模板2.docx",FileMode.OpenOrCreate,FileAccess.ReadWrite);
-                FileStream docFlieRep = new FileStream(workPath+"\\限速器测试报告模板2.docx", FileMode.OpenOrCreate, FileAccess.ReadWrite);
+                //FileStream docFlieRec = new FileStream(workPath+"\\限速器测试记录模板2.docx",FileMode.OpenOrCreate,FileAccess.ReadWrite);
+                //FileStream docFlieRep = new FileStream(workPath+"\\限速器测试报告模板2.docx", FileMode.OpenOrCreate, FileAccess.ReadWrite);
+                FileStream docFlieRec = new FileStream(workPath + "\\限速器测试记录模板3.doc", FileMode.OpenOrCreate, FileAccess.ReadWrite);
+                FileStream docFlieRep = new FileStream(workPath + "\\限速器测试报告模板3.doc", FileMode.OpenOrCreate, FileAccess.ReadWrite);
 
                 XWPFDocument documentRec = new XWPFDocument(docFlieRec);
                 XWPFDocument documentRep = new XWPFDocument(docFlieRep);
