@@ -366,6 +366,17 @@ namespace table_OCRV41ForCsharp
 
                 try
                 {
+                    tableRec1.GetRow(15).GetCell(1).SetText(jsonMessage["temperature"]);
+                    //左对齐
+                    tableRec1.GetRow(15).GetCell(1).Paragraphs[0].Alignment = ParagraphAlignment.LEFT;
+                }
+                catch
+                {
+                    Console.WriteLine("direction write error");
+                }
+
+                try
+                {
                     tableRec1.GetRow(19).GetCell(3).SetText(jsonMessage["next_year"]);
                     //右对齐
                     tableRec1.GetRow(19).GetCell(3).Paragraphs[0].Alignment = ParagraphAlignment.RIGHT;
@@ -825,15 +836,35 @@ namespace table_OCRV41ForCsharp
             return  path;
         }
 
+        static int ObjsIndex(string str,JObject objs)
+        {
+            int index = 0;
+            for (int i = 0; i < objs["tables_result"][0]["body"].Count(); i++)
+            {
+                var isContain = objs["tables_result"][0]["body"][i]["words"].ToString().Contains(str);
+                if (isContain)
+                {
+                    index = i;
+                    break;
+                }
+
+            }
+            return index;
+        }
+
         static Dictionary<string, string> JsonMessage(string filePath)
         {
             Dictionary<string, string> result = new Dictionary<string, string>();
             string json = File.ReadAllText(filePath);
-            JObject? objs = JObject.Parse(json);
+            JObject? objs = JObject.Parse(json);           
+
             string deviceCode;
             try
             {
-                deviceCode = objs["tables_result"][0]["body"][1]["words"].ToString().Replace("\n", "").Replace("\r", "");
+                int index = ObjsIndex("设备代码", objs)+1;
+
+                deviceCode = objs["tables_result"][0]["body"][index]["words"].ToString().Replace("\n", "").Replace("\r", "");
+                
                 Console.WriteLine("设备代码: " + deviceCode);
             }
             catch
@@ -844,7 +875,8 @@ namespace table_OCRV41ForCsharp
             string model;
             try
             {
-                model = objs["tables_result"][0]["body"][7]["words"].ToString().Replace("\n", "").Replace("\r", "");
+                int index = ObjsIndex("型号", objs) + 1;
+                model = objs["tables_result"][0]["body"][index]["words"].ToString().Replace("\n", "").Replace("\r", "");
                 Console.WriteLine("型号: " + model);
             }
             catch
@@ -855,7 +887,8 @@ namespace table_OCRV41ForCsharp
             string serialNum;
             try
             {
-                serialNum = objs["tables_result"][0]["body"][9]["words"].ToString().Replace("\n", "").Replace("\r", "");
+                int index = ObjsIndex("产品编号", objs) + 1;
+                serialNum = objs["tables_result"][0]["body"][index]["words"].ToString().Replace("\n", "").Replace("\r", "");
                 Console.WriteLine("产品编号: " + serialNum);
             }
             catch
@@ -866,7 +899,8 @@ namespace table_OCRV41ForCsharp
             string ManufacturingUnit;
             try
             {
-                ManufacturingUnit = objs["tables_result"][0]["body"][13]["words"].ToString().Replace("\n", "").Replace("\r", "");
+                int index = ObjsIndex("制造单位", objs) + 1;
+                ManufacturingUnit = objs["tables_result"][0]["body"][index]["words"].ToString().Replace("\n", "").Replace("\r", "");
                 Console.WriteLine("制造单位: " + ManufacturingUnit);
             }
             catch
@@ -877,7 +911,8 @@ namespace table_OCRV41ForCsharp
             string userName;
             try
             {
-                userName = objs["tables_result"][0]["body"][15]["words"].ToString().Replace("\n", "").Replace("\r", "");
+                int index = ObjsIndex("使用单位", objs) + 1;
+                userName = objs["tables_result"][0]["body"][index]["words"].ToString().Replace("\n", "").Replace("\r", "");
                 Console.WriteLine("使用单位: " + userName);
             }
             catch
@@ -888,7 +923,8 @@ namespace table_OCRV41ForCsharp
             string UsingAddress;
             try
             {
-                UsingAddress = objs["tables_result"][0]["body"][21]["words"].ToString().Replace("\n", "").Replace("\r", "");
+                int index = ObjsIndex("使用地点", objs) + 1;
+                UsingAddress = objs["tables_result"][0]["body"][index]["words"].ToString().Replace("\n", "").Replace("\r", "");
                 Console.WriteLine("使用地点: " + UsingAddress);
             }
             catch
@@ -899,19 +935,63 @@ namespace table_OCRV41ForCsharp
             string MaintenanceUnit;
             try
             {
-                MaintenanceUnit = objs["tables_result"][0]["body"][31]["words"].ToString().Replace("\n", "").Replace("\r", "");
-                Console.WriteLine("维保单位: " + MaintenanceUnit);
+                int index = ObjsIndex("维护保养单位", objs) + 1;
+                MaintenanceUnit = objs["tables_result"][0]["body"][index]["words"].ToString().Replace("\n", "").Replace("\r", "");
+                Console.WriteLine("维护保养单位: " + MaintenanceUnit);
             }
             catch
             {
-                Console.WriteLine("维保单位获取错误");
+                Console.WriteLine("维护保养单位获取错误");
                 MaintenanceUnit = "/";
             }
+            string speed;
+            try
+            {
+                int index = ObjsIndex("额定速度", objs) + 1;
+                speed = objs["tables_result"][0]["body"][index]["words"].ToString().Replace("\n", "");
+                string speed_pattern = @"\d{1}.\d{1,2}";
+                var speedNeed = Regex.Matches(speed, speed_pattern);
+                speed = speedNeed[0].ToString();
+                Console.WriteLine("速度：" + speed);
+            }
+            catch
+            {
+                Console.WriteLine("速度获取错误");
+                speed = "/";
+            }
+            string temperature;
+            try
+            {
+                int index = ObjsIndex("温度", objs);
+                temperature = objs["tables_result"][0]["body"][index]["words"].ToString().Replace("\n", "").Replace("\r", "");
+                string temperature_pattern = @"\d{2,3}";
+                MatchCollection temperatureNeed = Regex.Matches(temperature, temperature_pattern);
+                temperature = $"温度：{temperatureNeed[0].ToString()}℃，  湿度：{temperatureNeed[1].ToString()}％ ， 电压：{temperatureNeed[2].ToString()}V";
+                Console.WriteLine("温度、湿度、电压: " + temperature);
+            }
+            catch
+            {
+                temperature = "温度：    ℃，  湿度：    ％ ， 电压：     V";
+
+                Console.WriteLine("温度、湿度、电压自动获取失败");
+            }
+
             string reportNum;
             string reportNum2;
             try
             {
-                reportNum = objs["tables_result"][0]["header"][1]["words"].ToString();
+                int index = 0;
+                for (int i = 0; i < objs["tables_result"][0]["header"].Count(); i++)
+                {
+                    var isContain = objs["tables_result"][0]["header"][i]["words"].ToString().Contains("编号");
+                    if (isContain)
+                    {
+                        index = i;
+                        break;
+                    }
+
+                }
+                reportNum = objs["tables_result"][0]["header"][index]["words"].ToString();
                 MatchCollection matchs = Regex.Matches(reportNum, @"\d{7}");
                 reportNum2 = matchs[0].ToString();
                 Console.WriteLine("报告编号: " + reportNum2);
@@ -928,11 +1008,8 @@ namespace table_OCRV41ForCsharp
             string shenhe_date;
             try
             {
-                date = objs["tables_result"][0]["body"][56]["words"].ToString().Replace("\n", "").Replace("\r", "");
-                if (!date.Contains('年'))
-                {
-                    date = objs["tables_result"][0]["body"][55]["words"].ToString().Replace("\n", "").Replace("\r", "");
-                }
+                int index = ObjsIndex("\n校核", objs);
+                date = objs["tables_result"][0]["body"][index]["words"].ToString().Replace("\n", "").Replace("\r", "");
                 string date_or_month_pattern = @"\d{4}年\d{1,2}[\u4e00-\u9fa5]\d{0,}日|\d{4}年\d{1,2}[\u4e00-\u9fa5]";
                 MatchCollection dateNeed = Regex.Matches(date, date_or_month_pattern);
                 if (dateNeed.Count == 2)
@@ -968,6 +1045,7 @@ namespace table_OCRV41ForCsharp
                     next_year = "   年   月   日";
                     next_year_flag = "检验日期和下检日期出错";
                     shenhe_date = "   年   月   日";
+                    Console.WriteLine("检验日期获取错误");
                 }
             }
             catch
@@ -978,18 +1056,7 @@ namespace table_OCRV41ForCsharp
                 next_year_flag = "检验日期和下检日期出错";
                 shenhe_date = "   年   月   日";
             }
-            string speed;
-            try
-            {
-                Console.WriteLine("输入限速器额定速度：");
-                speed = Console.ReadLine();
-                Console.WriteLine("速度：" + speed);
-            }
-            catch
-            {
-                Console.WriteLine("速度获取错误");
-                speed = "/";
-            }
+                                 
             string xiansuqiModel;
             try
             {
@@ -1019,12 +1086,12 @@ namespace table_OCRV41ForCsharp
             Console.WriteLine("输入单向还是双向，0为单向，1为双向");
             if (Console.ReadLine() == "0")
             {
-                xiansuqiDirection = "☑单向☐双向";
+                xiansuqiDirection = "☑  单向 ☐  双向";
                 xiansuqiDirectionForReport = "单向";
             }
             else
             {
-                xiansuqiDirection = "☐单向☑双向";
+                xiansuqiDirection = "☐  单向 ☑  双向";
                 xiansuqiDirectionForReport = "双向";
             }
 
@@ -1045,6 +1112,7 @@ namespace table_OCRV41ForCsharp
             result.Add("xiansuqiDirectionForReport", xiansuqiDirectionForReport);
             result.Add("next_year_flag", next_year_flag);
             result.Add("shenhe_date", shenhe_date);
+            result.Add("temperature", temperature);
 
             return result;
         }
