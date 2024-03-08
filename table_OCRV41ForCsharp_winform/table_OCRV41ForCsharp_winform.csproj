@@ -8,4 +8,8 @@
     <ImplicitUsings>enable</ImplicitUsings>
   </PropertyGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\OCRV41_chengyun\OCRV41_chengyun.csproj" />
+  </ItemGroup>
+
 </Project>

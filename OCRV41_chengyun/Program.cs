@@ -12,7 +12,7 @@ using NPOI.XWPF.UserModel;
 
 
 
-namespace table_OCRV41ForCsharp
+namespace OCRV41_chengyun
 {
     internal class Program
     {
@@ -32,18 +32,18 @@ namespace table_OCRV41ForCsharp
         [STAThread]
         static void Main(string[] args)
         {
-            string? workPath ;
-            string data_dir = "" ;
+            string? workPath;
+            string data_dir = "";
             string folder_dir = "";
-            
+
             ArrayList result_dir = new ArrayList();
             Dictionary<string, string> jsonMessage = new Dictionary<string, string>();
 
-            PathMessage path ;
+            PathMessage path;
 
             path = CheckDefaultPath();
             workPath = path.FolderPath;
-            
+
 
             Console.WriteLine("已生成识别结果请按0，未生成请按1：");
             string? situation = Console.ReadLine();
@@ -51,18 +51,18 @@ namespace table_OCRV41ForCsharp
             if (situation == "1")
             {
                 //从json文件中读取
-             
-                data_dir =  path.DataFilePath+"\\";
-                
-                folder_dir =  path.DataJsonFilePath+"\\";
-               
+
+                data_dir = path.DataFilePath + "\\";
+
+                folder_dir = path.DataJsonFilePath + "\\";
+
 
             }
             else
             {
                 // 创建 OpenFileDialog 对象
                 OpenFileDialog fileDialog = new OpenFileDialog();
-              
+
                 // 设置对话框的属性
                 fileDialog.Multiselect = true; // 允许多选文件
                 fileDialog.Title = "请选择文件"; // 设置对话框的标题
@@ -72,7 +72,7 @@ namespace table_OCRV41ForCsharp
                 DialogResult result = fileDialog.ShowDialog();
                 if (result == DialogResult.OK)
                 {
-                    foreach(string fileName in fileDialog.FileNames)
+                    foreach (string fileName in fileDialog.FileNames)
                     {
                         result_dir.Add(fileName); // 获取用户选择的多个文件名的数组                                                              // 处理用户选择的文件路径
                     }
@@ -82,7 +82,7 @@ namespace table_OCRV41ForCsharp
             {
                 int num = 0;
                 DirectoryInfo directoryInfo = new DirectoryInfo(data_dir);
-                foreach(FileInfo file in directoryInfo.GetFiles())
+                foreach (FileInfo file in directoryInfo.GetFiles())
                 {
                     Console.WriteLine("{0}: {1} 正在处理：", num + 1, file.Name.Split('.')[0]);
                     string data_json = BaiduApi(file.FullName, REQUEST_URL, GetAccessToken());
@@ -95,9 +95,9 @@ namespace table_OCRV41ForCsharp
                     Console.WriteLine("");
                     Thread.Sleep(1000);
                 }
-             
+
             }
-            if(situation == "1")
+            if (situation == "1")
             {
                 string[] file_dir = Directory.GetFiles(folder_dir);
                 for (int i = 0; i < file_dir.Length; i++)
@@ -113,11 +113,52 @@ namespace table_OCRV41ForCsharp
                 Console.WriteLine("-----------{0}-------------", fileNum);
                 // 把识别结果的json文档信息提取出来
                 jsonMessage = JsonMessage(jsonPath);
-                //根据模板，写入对应的word文档里面
-                //FileStream docFlieRec = new FileStream(workPath+"\\限速器测试记录模板2.docx",FileMode.OpenOrCreate,FileAccess.ReadWrite);
-                //FileStream docFlieRep = new FileStream(workPath+"\\限速器测试报告模板2.docx", FileMode.OpenOrCreate, FileAccess.ReadWrite);
-                FileStream docFlieRec = new FileStream(workPath + "\\限速器测试记录模板3.docx", FileMode.OpenOrCreate, FileAccess.ReadWrite);
-                FileStream docFlieRep = new FileStream(workPath + "\\限速器测试报告模板3.docx", FileMode.OpenOrCreate, FileAccess.ReadWrite);
+                //分别选中乘运质量软件生成的原始记录和报告，通过窗口选中确定路径
+
+                //FileStream docFlieRec = new FileStream(workPath + "\\限速器测试记录模板3.docx", FileMode.OpenOrCreate, FileAccess.ReadWrite);
+                //FileStream docFlieRep = new FileStream(workPath + "\\限速器测试报告模板3.docx", FileMode.OpenOrCreate, FileAccess.ReadWrite);
+
+                //选择原始记录路径
+                // 创建 OpenFileDialog 对象
+                OpenFileDialog fileDialogRec = new OpenFileDialog();
+                // 设置对话框的属性
+                fileDialogRec.Multiselect = false; // 不允许多选文件
+                fileDialogRec.Title = "请选择自动生成的原始记录"; // 设置对话框的标题
+                fileDialogRec.Filter = "doc文件(*.doc)|*.doc"; // 设置对话框的文件过滤器
+
+                // 显示对话框并获取用户选择的文件路径
+                FileStream docFlieRec;
+                DialogResult result = fileDialogRec.ShowDialog();
+                if (result == DialogResult.OK)
+                {
+                   docFlieRec = new FileStream(fileDialogRec.FileName, FileMode.OpenOrCreate, FileAccess.ReadWrite);
+                }
+                else
+                {
+                    Console.WriteLine("没有选中文档，程序结束运行");
+                    break;
+                }
+
+                //选择报告路径
+                // 创建 OpenFileDialog 对象
+                OpenFileDialog fileDialogRep = new OpenFileDialog();
+                // 设置对话框的属性
+                fileDialogRep.Multiselect = false; // 不允许多选文件
+                fileDialogRep.Title = "请选择自动生成的报告"; // 设置对话框的标题
+                fileDialogRep.Filter = "doc文件(*.doc)|*.doc"; // 设置对话框的文件过滤器
+
+                // 显示对话框并获取用户选择的文件路径
+                FileStream docFlieRep;
+                result = fileDialogRep.ShowDialog();
+                if (result == DialogResult.OK)
+                {
+                    docFlieRep = new FileStream(fileDialogRep.FileName, FileMode.OpenOrCreate, FileAccess.ReadWrite);
+                }
+                else
+                {
+                    Console.WriteLine("没有选中文档，程序结束运行");
+                    break;
+                }
 
                 XWPFDocument documentRec = new XWPFDocument(docFlieRec);
                 XWPFDocument documentRep = new XWPFDocument(docFlieRep);
@@ -125,7 +166,7 @@ namespace table_OCRV41ForCsharp
                 IList<XWPFParagraph> paragraphsRec = documentRec.Paragraphs;
                 Console.WriteLine(paragraphsRec[0].ParagraphText + jsonMessage["reportNum2"].ToString());
 
-                
+
                 IList<XWPFTable> tablesRec = documentRec.Tables;
                 XWPFTable tableRec0 = tablesRec[0];
                 XWPFTable tableRec1 = tablesRec[1];
@@ -138,142 +179,7 @@ namespace table_OCRV41ForCsharp
                 XWPFTable tableRep1 = tablesRep[1];
 
 
-                //写入记录
-                //try
-                //{
-                //    tableRec1.GetRow(0).GetCell(1).SetText(jsonMessage["userName"]);
-                //}
-                //catch
-                //{
-                //    Console.WriteLine("userName write error");
-                //}
-
-                //try
-                //{
-                //    tableRec1.GetRow(1).GetCell(1).SetText(jsonMessage["MaintenanceUnit"]);
-                //}
-                //catch
-                //{
-                //    Console.WriteLine("MaintenanceUnit write error");
-                //}
-
-                //try
-                //{
-                //    tableRec1.GetRow(2).GetCell(1).SetText(jsonMessage["ManufacturingUnit"]);
-                //}
-                //catch
-                //{
-                //    Console.WriteLine("ManufacturingUnit write error");
-                //}
-
-                //try
-                //{
-                //    tableRec1.GetRow(3).GetCell(1).SetText(jsonMessage["UsingAddress"]);
-                //}
-                //catch
-                //{
-                //    Console.WriteLine("UsingAddress write error");
-                //}
-
-                //try
-                //{
-                //    tableRec1.GetRow(4).GetCell(1).SetText(jsonMessage["deviceCode"]);
-                //}
-                //catch
-                //{
-                //    Console.WriteLine("deviceCode write error");
-                //}
-
-                //try
-                //{
-                //    tableRec1.GetRow(5).GetCell(1).SetText(jsonMessage["model"]);
-                //}
-                //catch
-                //{
-                //    Console.WriteLine("model write error");
-                //}
-
-                //try
-                //{
-                //    tableRec1.GetRow(5).GetCell(3).SetText(jsonMessage["serialNum"]);
-                //}
-                //catch
-                //{
-                //    Console.WriteLine("serialNum write error");
-                //}
-
-                //try
-                //{
-                //    tableRec1.GetRow(6).GetCell(2).SetText(jsonMessage["xiansuqiModel"]);
-                //}
-                //catch
-                //{
-                //    Console.WriteLine("xiansuqiModel write error");
-                //}
-
-                //try
-                //{
-                //    tableRec1.GetRow(6).GetCell(4).SetText(jsonMessage["xiansuqiNum"]);
-                //}
-                //catch
-                //{
-                //    Console.WriteLine("xiansuqiNum write error");
-                //}
-
-                //try
-                //{
-                //    tableRec1.GetRow(7).GetCell(2).SetText(jsonMessage["speed"] + "m/s");
-                //}
-                //catch
-                //{
-                //    Console.WriteLine("speed write error");
-                //}
-
-                //try
-                //{
-                //    tableRec1.GetRow(7).GetCell(4).SetText(jsonMessage["xiansuqiDirectionForReport"]);
-                //}
-                //catch
-                //{
-                //    Console.WriteLine("direction write error");
-                //}
-
-                //try
-                //{
-                //    tableRec1.GetRow(21).GetCell(3).SetText(jsonMessage["next_year"]);
-                //    //右对齐
-                //    tableRec1.GetRow(21).GetCell(3).Paragraphs[0].Alignment = ParagraphAlignment.RIGHT;
-                //}
-                //catch
-                //{
-                //    Console.WriteLine("nextYear write error");
-                //}
-
-                //try
-                //{
-                //    tableRec1.GetRow(22).GetCell(1).Paragraphs[0].CreateRun().SetText(jsonMessage["date"]);
-                //    tableRec1.GetRow(22).GetCell(3).Paragraphs[0].CreateRun().SetText(jsonMessage["date"]);
-                //    //右对齐
-                //    tableRec1.GetRow(22).GetCell(1).Paragraphs[0].Alignment = ParagraphAlignment.RIGHT;
-                //    tableRec1.GetRow(22).GetCell(3).Paragraphs[0].Alignment = ParagraphAlignment.RIGHT;
-                //}
-                //catch
-                //{
-                //    Console.WriteLine("date write error");
-                //}
-
-                //try
-                //{
-                //    paragraphsRec[0].CreateRun().SetText(jsonMessage["reportNum2"]);
-                //    //if (jsonMessage["xiansuqiDirectionForReport"] == "双向")
-                //    //{
-                //    //    paragraphsRec[0].CreateRun().SetText("D");
-                //    //}
-                //}
-                //catch
-                //{
-                //    Console.WriteLine("reportNum2 write error");
-                //}
+                
                 //写入记录for模板3
                 try
                 {
@@ -412,8 +318,8 @@ namespace table_OCRV41ForCsharp
                 }
 
 
-                string outPath = string.Format(workPath+"\\{0}_{1}_{2}.doc",
-                                                    jsonMessage["deviceCode"], 
+                string outPath = string.Format(workPath + "\\{0}_{1}_{2}.docx",
+                                                    jsonMessage["deviceCode"],
                                                     Path.GetFileNameWithoutExtension(jsonPath),
                                                     jsonMessage["next_year_flag"]);
                 FileStream outFile = new FileStream(outPath, FileMode.OpenOrCreate, FileAccess.ReadWrite);
@@ -425,147 +331,7 @@ namespace table_OCRV41ForCsharp
                 Console.WriteLine("{0}打印记录完成", Path.GetFileNameWithoutExtension(jsonPath));
                 Console.WriteLine("-------------------------------------------------------");
                 Console.WriteLine("");
-                //
-                ////写入报告
-                //try
-                //{
-                //    tableRep1.GetRow(0).GetCell(1).SetText(jsonMessage["userName"]);
-                //}
-                //catch
-                //{
-                //    Console.WriteLine("userName write error");
-                //}
-
-                //try
-                //{
-                //    tableRep1.GetRow(1).GetCell(1).SetText(jsonMessage["MaintenanceUnit"]);
-                //}
-                //catch
-                //{
-                //    Console.WriteLine("MaintenanceUnit write error");
-                //}
-
-                //try
-                //{
-                //    tableRep1.GetRow(2).GetCell(1).SetText(jsonMessage["ManufacturingUnit"]);
-                //}
-                //catch
-                //{
-                //    Console.WriteLine("ManufacturingUnit write error");
-                //}
-
-                //try
-                //{
-                //    tableRep1.GetRow(3).GetCell(1).SetText(jsonMessage["UsingAddress"]);
-                //}
-                //catch
-                //{
-                //    Console.WriteLine("UsingAddress write error");
-                //}
-
-                //try
-                //{
-                //    tableRep1.GetRow(4).GetCell(1).SetText(jsonMessage["deviceCode"]);
-                //}
-                //catch
-                //{
-                //    Console.WriteLine("deviceCode write error");
-                //}
-
-                //try
-                //{
-                //    tableRep1.GetRow(5).GetCell(1).SetText(jsonMessage["model"]);
-                //}
-                //catch
-                //{
-                //    Console.WriteLine("model write error");
-                //}
-
-                //try
-                //{
-                //    tableRep1.GetRow(5).GetCell(3).SetText(jsonMessage["serialNum"]);
-                //}
-                //catch
-                //{
-                //    Console.WriteLine("serialNum write error");
-                //}
-
-                //try
-                //{
-                //    tableRep1.GetRow(6).GetCell(2).SetText(jsonMessage["xiansuqiModel"]);
-                //}
-                //catch
-                //{
-                //    Console.WriteLine("xiansuqiModel write error");
-                //}
-
-                //try
-                //{
-                //    tableRep1.GetRow(6).GetCell(4).SetText(jsonMessage["xiansuqiNum"]);
-                //}
-                //catch
-                //{
-                //    Console.WriteLine("xiansuqiNum write error");
-                //}
-
-                //try
-                //{
-                //    tableRep1.GetRow(7).GetCell(2).SetText(jsonMessage["speed"] + "m/s");
-                //}
-                //catch
-                //{
-                //    Console.WriteLine("speed write error");
-                //}
-
-                //try
-                //{
-                //    tableRep1.GetRow(7).GetCell(4).SetText(jsonMessage["xiansuqiDirectionForReport"]);
-                //}
-                //catch
-                //{
-                //    Console.WriteLine("direction write error");
-                //}
-
-                //try
-                //{
-                //    tableRep1.GetRow(21).GetCell(3).SetText(jsonMessage["next_year"]);
-                //}
-                //catch
-                //{
-                //    Console.WriteLine("nextYear write error");
-                //}
-
-                //try
-                //{
-                //    tableRep1.GetRow(22).GetCell(1).Paragraphs[0].CreateRun().SetText(jsonMessage["date"]);
-
-
-                //    tableRep1.GetRow(23).GetCell(1).Paragraphs[0].CreateRun().SetText(jsonMessage["shenhe_date"]);
-                //    tableRep1.GetRow(24).GetCell(1).Paragraphs[0].CreateRun().SetText(jsonMessage["shenhe_date"]);
-                //    tableRep1.GetRow(22).GetCell(2).Paragraphs[3].CreateRun().SetText(jsonMessage["shenhe_date"]);
-
-                //    //右对齐
-                //    tableRep1.GetRow(22).GetCell(1).Paragraphs[0].Alignment = ParagraphAlignment.RIGHT;
-                //    tableRep1.GetRow(23).GetCell(1).Paragraphs[0].Alignment = ParagraphAlignment.RIGHT;
-                //    tableRep1.GetRow(24).GetCell(1).Paragraphs[0].Alignment = ParagraphAlignment.RIGHT;
-                //}
-                //catch
-                //{
-                //    Console.WriteLine("date write error");
-                //}
-
-                //try
-                //{
-                //    paragraphsRep[0].CreateRun().SetText(jsonMessage["reportNum2"]);
-                //    //if (jsonMessage["xiansuqiDirectionForReport"] == "双向")
-                //    //{
-                //    //    paragraphsRep[0].CreateRun().SetText("D");
-                //    //}
-                //}
-                //catch
-                //{
-                //    Console.WriteLine("reportNum2 write error");
-                //}
+                
                 //写入报告模板3
                 try
                 {
@@ -700,7 +466,7 @@ namespace table_OCRV41ForCsharp
                 }
 
 
-                string outPath2 = string.Format(workPath + "\\{0}.doc",
+                string outPath2 = string.Format(workPath + "\\{0}.docx",
                                                     jsonMessage["deviceCode"]);
                 FileStream outFile2 = new FileStream(outPath2, FileMode.OpenOrCreate, FileAccess.ReadWrite);
                 documentRep.Write(outFile2);
@@ -783,21 +549,21 @@ namespace table_OCRV41ForCsharp
         static PathMessage CheckDefaultPath(string defaultFolderPath = "")
         {
             PathMessage path = new PathMessage();
-                        
-           
+
+
             //检查是否有配置文件，没有就生成，并选择路径
             path.DefaultJsonFilePath = System.Environment.CurrentDirectory + @"\default.json";
-         
+
 
             if (!File.Exists(path.DefaultJsonFilePath))
-            {               
+            {
                 //选择默认路径
                 FolderBrowserDialog folder1 = new FolderBrowserDialog();
                 folder1.Description = "请选择需要识别的图片所在文件夹";
 
                 if (folder1.ShowDialog() == DialogResult.OK)
                 {
-                    path.DataFilePath = folder1.SelectedPath ;
+                    path.DataFilePath = folder1.SelectedPath;
                     Console.WriteLine("------------------------------------------------");
                     Console.WriteLine($"已选择需要识别的图片所在文件夹：{path.DataFilePath}");
                     Console.WriteLine("");
@@ -808,20 +574,20 @@ namespace table_OCRV41ForCsharp
 
                 if (folder2.ShowDialog() == DialogResult.OK)
                 {
-                    path.DataJsonFilePath = folder2.SelectedPath ;
+                    path.DataJsonFilePath = folder2.SelectedPath;
                     Console.WriteLine("------------------------------------------------");
                     Console.WriteLine($"已选择识别结果存放的文件夹：{path.DataJsonFilePath}");
                     Console.WriteLine("");
                 }
                 //确定工作路径
 
-                path.FolderPath = Path.GetDirectoryName(folder1 .SelectedPath);
- 
+                path.FolderPath = Path.GetDirectoryName(folder1.SelectedPath);
+
                 Console.WriteLine($"当前工作文件夹目录为：{path.FolderPath}");
 
                 //把默认路径写入json文件中
                 string defaultStr = JsonConvert.SerializeObject(path);
-                File.WriteAllText(path.DefaultJsonFilePath, defaultStr);                            
+                File.WriteAllText(path.DefaultJsonFilePath, defaultStr);
             }
             else
             {
@@ -829,16 +595,16 @@ namespace table_OCRV41ForCsharp
                 string defaultStr = File.ReadAllText(path.DefaultJsonFilePath);
                 PathMessage? defaultStrPath = JsonConvert.DeserializeObject<PathMessage>(defaultStr);
                 path.DataFilePath = defaultStrPath.DataFilePath;
-                path.DataJsonFilePath= defaultStrPath.DataJsonFilePath;
+                path.DataJsonFilePath = defaultStrPath.DataJsonFilePath;
                 //确定工作路径
                 path.FolderPath = Path.GetDirectoryName(path.DataFilePath);
                 Console.WriteLine($"当前工作文件夹目录为：{path.FolderPath}");
             }
 
-            return  path;
+            return path;
         }
 
-        static int ObjsIndex(string str,JObject objs)
+        static int ObjsIndex(string str, JObject objs)
         {
             int index = 0;
             for (int i = 0; i < objs["tables_result"][0]["body"].Count(); i++)
@@ -858,15 +624,15 @@ namespace table_OCRV41ForCsharp
         {
             Dictionary<string, string> result = new Dictionary<string, string>();
             string json = File.ReadAllText(filePath);
-            JObject? objs = JObject.Parse(json);           
+            JObject? objs = JObject.Parse(json);
 
             string deviceCode;
             try
             {
-                int index = ObjsIndex("设备代码", objs)+1;
+                int index = ObjsIndex("设备代码", objs) + 1;
 
                 deviceCode = objs["tables_result"][0]["body"][index]["words"].ToString().Replace("\n", "").Replace("\r", "");
-                
+
                 Console.WriteLine("设备代码: " + deviceCode);
             }
             catch
@@ -994,9 +760,8 @@ namespace table_OCRV41ForCsharp
 
                 }
                 reportNum = objs["tables_result"][0]["header"][index]["words"].ToString();
-                //MatchCollection matchs = Regex.Matches(reportNum, @"^\d{8}");
-                //reportNum2 = matchs[0].ToString().Substring(1,7);
-                reportNum2 = reportNum.Substring(reportNum.Length-7);
+                MatchCollection matchs = Regex.Matches(reportNum, @"\d{7}");
+                reportNum2 = matchs[0].ToString();
                 Console.WriteLine("报告编号: " + reportNum2);
             }
             catch
@@ -1024,7 +789,7 @@ namespace table_OCRV41ForCsharp
                     int month = int.Parse(matches[1].Value);
                     int day = int.Parse(matches[2].Value);
                     date = matches[0].Value + "年" + matches[1].Value + "月" + matches[2].Value + "日";
-                    Console.WriteLine("检验时间为："+date);
+                    Console.WriteLine("检验时间为：" + date);
                     DateTime dateforcell = new DateTime(year, month, day);
                     //计算2年后的日期
                     string? nextdate;
@@ -1060,7 +825,7 @@ namespace table_OCRV41ForCsharp
                 next_year_flag = "检验日期和下检日期出错";
                 shenhe_date = "   年   月   日";
             }
-                                 
+
             string xiansuqiModel;
             try
             {
@@ -1122,3 +887,4 @@ namespace table_OCRV41ForCsharp
         }
     }
 }
+
