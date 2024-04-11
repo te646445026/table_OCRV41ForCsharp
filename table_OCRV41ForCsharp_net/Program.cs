@@ -374,6 +374,18 @@ namespace table_OCRV41ForCsharp
                 {
                     Console.WriteLine("direction write error");
                 }
+                
+
+                try
+                {
+                    tableRec1.GetRow(17).GetCell(1).SetText(jsonMessage["MaintenanceUnit"]);
+                    //右对齐
+                    tableRec1.GetRow(17).GetCell(1).Paragraphs[0].Alignment = ParagraphAlignment.LEFT;
+                }
+                catch
+                {
+                    Console.WriteLine("MaintenanceUnit write error");
+                }
 
                 try
                 {
@@ -653,6 +665,17 @@ namespace table_OCRV41ForCsharp
                 catch
                 {
                     Console.WriteLine("direction write error");
+                }
+
+                try
+                {
+                    tableRep1.GetRow(15).GetCell(1).SetText(jsonMessage["MaintenanceUnit"]);
+                    //右对齐
+                    tableRep1.GetRow(15).GetCell(1).Paragraphs[0].Alignment = ParagraphAlignment.LEFT;
+                }
+                catch
+                {
+                    Console.WriteLine("MaintenanceUnit write error");
                 }
 
                 try
