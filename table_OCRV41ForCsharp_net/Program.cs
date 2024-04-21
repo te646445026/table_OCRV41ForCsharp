@@ -9,6 +9,9 @@ using Newtonsoft.Json; //https://www.nuget.org/packages/Newtonsoft.Json
 using Newtonsoft.Json.Linq;
 using System.Collections;
 using NPOI.XWPF.UserModel;
+using System.Net.Http.Headers;
+using System.Security.Cryptography;
+using System.Text;
 
 
 
@@ -17,9 +20,9 @@ namespace table_OCRV41ForCsharp
     internal class Program
     {
         // KEY信息
-        const string API_KEY = "Et4nGdx8ecc5chOnoilbxEyX";
-        const string SECRET_KEY = "505cd0eiUZt22mPzelDGVrWzN7ELwteh";
-        const string REQUEST_URL = "https://aip.baidubce.com/rest/2.0/ocr/v1/table";
+        const string API_KEY = "AKIDCLfBaq2DQVUVbsHoHan5Ml9Slxb5MUVn";
+        const string SECRET_KEY = "f9gr9MRp9JIKRRDqMwdSBl9ORZijirto";
+        private static readonly HttpClient Client = new HttpClient();
 
         public class PathMessage
         {
@@ -32,6 +35,15 @@ namespace table_OCRV41ForCsharp
         [STAThread]
         static void Main(string[] args)
         {
+            var secretId = API_KEY;
+            var secretKey = SECRET_KEY;
+            var token = "";
+            var service = "ocr";
+            var version = "2018-11-19";
+            var action = "RecognizeTableAccurateOCR";
+            var body = "{}";
+            var region = "ap-guangzhou";
+
             string? workPath ;
             string data_dir = "" ;
             string folder_dir = "";
@@ -85,7 +97,8 @@ namespace table_OCRV41ForCsharp
                 foreach(FileInfo file in directoryInfo.GetFiles())
                 {
                     Console.WriteLine("{0}: {1} 正在处理：", num + 1, file.Name.Split('.')[0]);
-                    string data_json = BaiduApi(file.FullName, REQUEST_URL, GetAccessToken());
+                    body = GetFileContentAsBase64(file.FullName);
+                    string data_json = DoRequest(secretId, secretKey, service, version, action, body, region, token);
                     string jsonFile_name = folder_dir + file.Name.Split('.')[0] + ".json";
                     File.WriteAllText(jsonFile_name, data_json);
 
@@ -729,50 +742,110 @@ namespace table_OCRV41ForCsharp
                 byte[] arr = new byte[filestream.Length];
                 filestream.Read(arr, 0, (int)filestream.Length);
                 string base64 = Convert.ToBase64String(arr);
+                base64 = "{\"ImageBase64\":\"data:image/png;base64," + base64 + "\"}";
                 return base64;
             }
         }
 
-        /**
-        * 使用 AK，SK 生成鉴权签名（Access Token）
-        * @return 鉴权签名信息（Access Token）
-        */
-        static string GetAccessToken()
+        static string DoRequest(
+            string secretId, string secretKey,
+            string service, string version, string action,
+            string body, string region, string token)
         {
-            var client = new RestClient($"https://aip.baidubce.com/oauth/2.0/token");
-            client.Timeout = -1;
-            var request = new RestRequest(Method.POST);
-            request.AddParameter("grant_type", "client_credentials");
-            request.AddParameter("client_id", API_KEY);
-            request.AddParameter("client_secret", SECRET_KEY);
-            IRestResponse response = client.Execute(request);
-            var result = JsonConvert.DeserializeObject<dynamic>(response.Content);
-            //var result = JsonSerializer.Deserialize<dynamic>(response.Content);
-            return result.access_token.ToString();
+            var request = BuildRequest(secretId, secretKey, service, version, action, body, region, token);
+            var response = Client.Send(request);
+            return response.Content.ReadAsStringAsync().Result;
         }
 
-        /**
-         * 获取识别的结果，以json文件的形式返回字符串
-         * @param filePath 需要识别的图片路径
-         * @param requestUrl 上传图片的url
-         * @param acessToken  Token文件
-         */
-        static string BaiduApi(string filePath, string requestUrl, string accessToken)
+        static HttpRequestMessage BuildRequest(
+            string secretId, string secretKey,
+            string service, string version, string action,
+            string body, string region, string token)
         {
-            // image 可以通过 GetFileBase64Content('C:\fakepath\双龙.png') 方法获取
-            string pictureBase64 = GetFileContentAsBase64(filePath);
-            //开启 post服务
-            var client = new RestClient(requestUrl + "?access_token=" + accessToken);
-            client.Timeout = -1;
-            var request = new RestRequest(Method.POST);
-            request.AddHeader("Content-Type", "application/x-www-form-urlencoded");
-            request.AddHeader("Accept", "application/json");
-            request.AddParameter("image", pictureBase64);
-            request.AddParameter("cell_contents", "false");
-            request.AddParameter("return_excel", "false");
-            IRestResponse response = client.Execute(request);
-            return response.Content;
+            var host = "ocr.tencentcloudapi.com";
+            var url = "https://" + host;
+            var contentType = "application/json; charset=utf-8";
+            var timestamp = ((int)DateTime.UtcNow.Subtract(new DateTime(1970, 1, 1)).TotalSeconds).ToString();
+            var auth = GetAuth(secretId, secretKey, host, contentType, timestamp, body);
+            var request = new HttpRequestMessage();
+            request.Method = HttpMethod.Post;
+            request.Headers.Add("Host", host);
+            request.Headers.Add("X-TC-Timestamp", timestamp);
+            request.Headers.Add("X-TC-Version", version);
+            request.Headers.Add("X-TC-Action", action);
+            request.Headers.Add("X-TC-Region", region);
+            request.Headers.Add("X-TC-Token", token);
+            request.Headers.Add("X-TC-RequestClient", "SDK_NET_BAREBONE");
+            request.Headers.TryAddWithoutValidation("Authorization", auth);
+            // request.Headers.Authorization = new AuthenticationHeaderValue(auth);
+            request.RequestUri = new Uri(url);
+            request.Content = new StringContent(body, MediaTypeWithQualityHeaderValue.Parse(contentType));
+            Console.WriteLine(request);
+            return request;
         }
+
+        static string GetAuth(
+            string secretId, string secretKey, 
+            string host, string contentType,
+            string timestamp, string body)
+        {
+            var canonicalURI = "/";
+            var canonicalHeaders = "content-type:" + contentType + "\nhost:" + host + "\n";
+            var signedHeaders = "content-type;host";
+            var hashedRequestPayload = Sha256Hex(body);
+            var canonicalRequest = "POST" + "\n"
+                                          + canonicalURI + "\n"
+                                          + "\n"
+                                          + canonicalHeaders + "\n"
+                                          + signedHeaders + "\n"
+                                          + hashedRequestPayload;
+
+            var algorithm = "TC3-HMAC-SHA256";
+            var date = new DateTime(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc).AddSeconds(int.Parse(timestamp))
+                .ToString("yyyy-MM-dd");
+            var service = host.Split(".")[0];
+            var credentialScope = date + "/" + service + "/" + "tc3_request";
+            var hashedCanonicalRequest = Sha256Hex(canonicalRequest);
+            var stringToSign = algorithm + "\n"
+                                         + timestamp + "\n"
+                                         + credentialScope + "\n"
+                                         + hashedCanonicalRequest;
+
+            var tc3SecretKey = Encoding.UTF8.GetBytes("TC3" + secretKey);
+            var secretDate = HmacSha256(tc3SecretKey, Encoding.UTF8.GetBytes(date));
+            var secretService = HmacSha256(secretDate, Encoding.UTF8.GetBytes(service));
+            var secretSigning = HmacSha256(secretService, Encoding.UTF8.GetBytes("tc3_request"));
+            var signatureBytes = HmacSha256(secretSigning, Encoding.UTF8.GetBytes(stringToSign));
+            var signature = BitConverter.ToString(signatureBytes).Replace("-", "").ToLower();
+
+            return algorithm + " "
+                             + "Credential=" + secretId + "/" + credentialScope + ", "
+                             + "SignedHeaders=" + signedHeaders + ", "
+                             + "Signature=" + signature;
+        }
+
+        public static string Sha256Hex(string s)
+        {
+            using (SHA256 algo = SHA256.Create())
+            {
+                byte[] hashbytes = algo.ComputeHash(Encoding.UTF8.GetBytes(s));
+                StringBuilder builder = new StringBuilder();
+                for (int i = 0; i < hashbytes.Length; ++i)
+                {
+                    builder.Append(hashbytes[i].ToString("x2"));
+                }
+
+                return builder.ToString();
+            }
+        }
+
+        private static byte[] HmacSha256(byte[] key, byte[] msg)
+        {
+            using (HMACSHA256 mac = new HMACSHA256(key))
+            {
+                return mac.ComputeHash(msg);
+            }
+        }       
 
         /**
        * 检查默认配置文件，如果存在，则读取对应部分作为默认路径，如果不存在，则新建并要求用户选择路径作为默认路径
@@ -841,9 +914,10 @@ namespace table_OCRV41ForCsharp
         static int ObjsIndex(string str,JObject objs)
         {
             int index = 0;
-            for (int i = 0; i < objs["tables_result"][0]["body"].Count(); i++)
+            for (int i = 0; i < objs["Response"]["TableDetections"][1]["Cells"].Count(); i++)
             {
-                var isContain = objs["tables_result"][0]["body"][i]["words"].ToString().Contains(str);
+                var text = objs["Response"]["TableDetections"][1]["Cells"][i]["Text"];
+                var isContain = text.ToString().Contains(str);
                 if (isContain)
                 {
                     index = i;
@@ -858,14 +932,40 @@ namespace table_OCRV41ForCsharp
         {
             Dictionary<string, string> result = new Dictionary<string, string>();
             string json = File.ReadAllText(filePath);
-            JObject? objs = JObject.Parse(json);           
+            JObject? objs = JObject.Parse(json);
 
+
+            string jianyanOrjiance = "检测";
+            try
+            {
+                int index = 0;
+                for (int i = 0; i < objs["Response"]["TableDetections"][0]["Cells"].Count(); i++)
+                {
+                    var isContain = objs["Response"]["TableDetections"][0]["Cells"][i]["Text"].ToString().Contains("RTD");
+                    if (isContain)
+                    {
+                        index = i;
+                        jianyanOrjiance = "检验";
+                        break;
+                    }
+
+                }
+                Console.WriteLine("当前图片是: " + jianyanOrjiance);
+            }
+            catch
+            {
+                Console.WriteLine("获取检验还是检测失败,默认设置为检测" );
+
+            }
+            
+            
+            
             string deviceCode;
             try
             {
                 int index = ObjsIndex("设备代码", objs)+1;
 
-                deviceCode = objs["tables_result"][0]["body"][index]["words"].ToString().Replace("\n", "").Replace("\r", "");
+                deviceCode = objs["Response"]["TableDetections"][1]["Cells"][index]["Text"].ToString().Replace("\n", "").Replace("\r", "");
                 
                 Console.WriteLine("设备代码: " + deviceCode);
             }
@@ -878,7 +978,7 @@ namespace table_OCRV41ForCsharp
             try
             {
                 int index = ObjsIndex("型号", objs) + 1;
-                model = objs["tables_result"][0]["body"][index]["words"].ToString().Replace("\n", "").Replace("\r", "");
+                model = objs["Response"]["TableDetections"][1]["Cells"][index]["Text"].ToString().Replace("\n", "").Replace("\r", "");
                 Console.WriteLine("型号: " + model);
             }
             catch
@@ -890,7 +990,7 @@ namespace table_OCRV41ForCsharp
             try
             {
                 int index = ObjsIndex("产品编号", objs) + 1;
-                serialNum = objs["tables_result"][0]["body"][index]["words"].ToString().Replace("\n", "").Replace("\r", "");
+                serialNum = objs["Response"]["TableDetections"][1]["Cells"][index]["Text"].ToString().Replace("\n", "").Replace("\r", "");
                 Console.WriteLine("产品编号: " + serialNum);
             }
             catch
@@ -902,7 +1002,7 @@ namespace table_OCRV41ForCsharp
             try
             {
                 int index = ObjsIndex("制造单位", objs) + 1;
-                ManufacturingUnit = objs["tables_result"][0]["body"][index]["words"].ToString().Replace("\n", "").Replace("\r", "");
+                ManufacturingUnit = objs["Response"]["TableDetections"][1]["Cells"][index]["Text"].ToString().Replace("\n", "").Replace("\r", "");
                 Console.WriteLine("制造单位: " + ManufacturingUnit);
             }
             catch
@@ -914,7 +1014,7 @@ namespace table_OCRV41ForCsharp
             try
             {
                 int index = ObjsIndex("使用单位", objs) + 1;
-                userName = objs["tables_result"][0]["body"][index]["words"].ToString().Replace("\n", "").Replace("\r", "");
+                userName = objs["Response"]["TableDetections"][1]["Cells"][index]["Text"].ToString().Replace("\n", "").Replace("\r", "");
                 Console.WriteLine("使用单位: " + userName);
             }
             catch
@@ -925,20 +1025,20 @@ namespace table_OCRV41ForCsharp
             string UsingAddress;
             try
             {
-                int index = ObjsIndex("使用地点", objs) + 1;
-                UsingAddress = objs["tables_result"][0]["body"][index]["words"].ToString().Replace("\n", "").Replace("\r", "");
-                Console.WriteLine("使用地点: " + UsingAddress);
+                int index = ObjsIndex("安装地点", objs) + 1;
+                UsingAddress = objs["Response"]["TableDetections"][1]["Cells"][index]["Text"].ToString().Replace("\n", "").Replace("\r", "");
+                Console.WriteLine("安装地点: " + UsingAddress);
             }
             catch
             {
-                Console.WriteLine("使用地点获取错误");
+                Console.WriteLine("安装地点获取错误");
                 UsingAddress = "/";
             }
             string MaintenanceUnit;
             try
             {
                 int index = ObjsIndex("维护保养单位", objs) + 1;
-                MaintenanceUnit = objs["tables_result"][0]["body"][index]["words"].ToString().Replace("\n", "").Replace("\r", "");
+                MaintenanceUnit = objs["Response"]["TableDetections"][1]["Cells"][index]["Text"].ToString().Replace("\n", "").Replace("\r", "");
                 Console.WriteLine("维护保养单位: " + MaintenanceUnit);
             }
             catch
@@ -950,7 +1050,7 @@ namespace table_OCRV41ForCsharp
             try
             {
                 int index = ObjsIndex("额定速度", objs) + 1;
-                speed = objs["tables_result"][0]["body"][index]["words"].ToString().Replace("\n", "");
+                speed = objs["Response"]["TableDetections"][1]["Cells"][index]["Text"].ToString().Replace("\n", "");
                 string speed_pattern = @"\d{1}.\d{1,2}";
                 var speedNeed = Regex.Matches(speed, speed_pattern);
                 speed = speedNeed[0].ToString();
@@ -964,12 +1064,25 @@ namespace table_OCRV41ForCsharp
             string temperature;
             try
             {
-                int index = ObjsIndex("温度", objs);
-                temperature = objs["tables_result"][0]["body"][index]["words"].ToString().Replace("\n", "").Replace("\r", "");
-                string temperature_pattern = @"\d{2,3}";
-                MatchCollection temperatureNeed = Regex.Matches(temperature, temperature_pattern);
-                temperature = $"温度：{temperatureNeed[0].ToString()}℃，  湿度：{temperatureNeed[1].ToString()}％ ， 电压：{temperatureNeed[2].ToString()}V";
-                Console.WriteLine("温度、湿度、电压: " + temperature);
+                if (jianyanOrjiance.Equals("检测"))
+                {
+                    int index = ObjsIndex("温度", objs);
+                    temperature = objs["Response"]["TableDetections"][1]["Cells"][index]["Text"].ToString().Replace("\n", "").Replace("\r", "");
+                    string temperature_pattern = @"\d{2,3}";
+                    MatchCollection temperatureNeed = Regex.Matches(temperature, temperature_pattern);
+                    temperature = $"温度：{temperatureNeed[0].ToString()}℃，  湿度：{temperatureNeed[1].ToString()}％ ， 电压：{temperatureNeed[2].ToString()}V";
+                    Console.WriteLine("温度、湿度、电压: " + temperature);
+                }
+                else
+                {
+                    int index = ObjsIndex("检验条件", objs);
+                    temperature = objs["Response"]["TableDetections"][1]["Cells"][index+1]["Text"].ToString().Replace("\n", "").Replace("\r", "");
+                    string temperature2 = objs["Response"]["TableDetections"][1]["Cells"][index + 2]["Text"].ToString().Replace("\n", "").Replace("\r", "");
+                    string temperature3 = objs["Response"]["TableDetections"][1]["Cells"][index + 3]["Text"].ToString().Replace("\n", "").Replace("\r", "");
+                    temperature = $"温度：{temperature}℃，  湿度：{temperature2}％ ， 电压：{temperature3}V";
+                    Console.WriteLine("温度、湿度、电压: " + temperature);
+                }
+                
             }
             catch
             {
@@ -980,12 +1093,21 @@ namespace table_OCRV41ForCsharp
 
             string reportNum;
             string reportNum2;
+            string jianyanOrjianceReportNum;
             try
             {
-                int index = 0;
-                for (int i = 0; i < objs["tables_result"][0]["header"].Count(); i++)
+                if (jianyanOrjiance.Equals("检验"))
                 {
-                    var isContain = objs["tables_result"][0]["header"][i]["words"].ToString().Contains("编号");
+                    jianyanOrjianceReportNum = "RTD";
+                }
+                else
+                {
+                    jianyanOrjianceReportNum = "RTE";
+                }
+                int index = 0;
+                for (int i = 0; i < objs["Response"]["TableDetections"][0]["Cells"].Count(); i++)
+                {
+                    var isContain = objs["Response"]["TableDetections"][0]["Cells"][i]["Text"].ToString().Contains(jianyanOrjianceReportNum);
                     if (isContain)
                     {
                         index = i;
@@ -993,11 +1115,12 @@ namespace table_OCRV41ForCsharp
                     }
 
                 }
-                reportNum = objs["tables_result"][0]["header"][index]["words"].ToString();
+                reportNum = objs["Response"]["TableDetections"][0]["Cells"][index]["Text"].ToString();
                 //MatchCollection matchs = Regex.Matches(reportNum, @"^\d{8}");
                 //reportNum2 = matchs[0].ToString().Substring(1,7);
-                reportNum2 = reportNum.Substring(reportNum.Length-7);
+                reportNum2 = reportNum.Substring(reportNum.Length - 7);
                 Console.WriteLine("报告编号: " + reportNum2);
+
             }
             catch
             {
@@ -1009,15 +1132,24 @@ namespace table_OCRV41ForCsharp
             string next_year;
             string next_year_flag;
             string shenhe_date;
+            string jianyanOrjianceDate;
             try
             {
-                int index = ObjsIndex("\n校核", objs);
-                date = objs["tables_result"][0]["body"][index]["words"].ToString().Replace("\n", "").Replace("\r", "");
+                if (jianyanOrjiance.Equals("检验"))
+                {
+                    jianyanOrjianceDate = "检验日期";
+                }
+                else
+                {
+                    jianyanOrjianceDate = "检测日期";
+                }
+                int index = ObjsIndex(jianyanOrjianceDate, objs);
+                date = objs["Response"]["TableDetections"][1]["Cells"][index]["Text"].ToString().Replace("\n", "").Replace("\r", "");
                 string date_or_month_pattern = @"\d{4}年\d{1,2}[\u4e00-\u9fa5]\d{0,}日|\d{4}年\d{1,2}[\u4e00-\u9fa5]";
                 MatchCollection dateNeed = Regex.Matches(date, date_or_month_pattern);
-                if (dateNeed.Count == 2)
+                if (dateNeed != null)
                 {
-                    date = dateNeed[1].Value;
+                    date = dateNeed[dateNeed.Count()-1].Value;
                     string date_or_month_pattern2 = @"\d+";
                     MatchCollection matches = Regex.Matches(date, date_or_month_pattern2);
                     int year = int.Parse(matches[0].Value);
@@ -1050,7 +1182,7 @@ namespace table_OCRV41ForCsharp
                     next_year_flag = "检验日期和下检日期出错";
                     shenhe_date = "   年   月   日";
                     Console.WriteLine("检验日期获取错误");
-                }
+                }               
             }
             catch
             {
