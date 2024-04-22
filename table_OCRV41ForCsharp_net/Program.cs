@@ -4,7 +4,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading;
-using RestSharp;//依赖版本106.15.0 https://www.nuget.org/packages/RestSharp/106.15.0
 using Newtonsoft.Json; //https://www.nuget.org/packages/Newtonsoft.Json
 using Newtonsoft.Json.Linq;
 using System.Collections;
@@ -390,6 +389,17 @@ namespace table_OCRV41ForCsharp
 
                 try
                 {
+                    tableRec1.GetRow(17).GetCell(1).SetText(jsonMessage["MaintenanceUnit"]);
+                    //左对齐
+                    tableRec1.GetRow(17).GetCell(1).Paragraphs[0].Alignment = ParagraphAlignment.LEFT;
+                }
+                catch
+                {
+                    Console.WriteLine("MaintenanceUnit write error");
+                }
+
+                try
+                {
                     tableRec1.GetRow(19).GetCell(3).SetText(jsonMessage["next_year"]);
                     //右对齐
                     tableRec1.GetRow(19).GetCell(3).Paragraphs[0].Alignment = ParagraphAlignment.RIGHT;
@@ -668,6 +678,19 @@ namespace table_OCRV41ForCsharp
                     Console.WriteLine("direction write error");
                 }
 
+                
+
+                try
+                {
+                    tableRep1.GetRow(15).GetCell(1).SetText(jsonMessage["MaintenanceUnit"]);
+                    //右对齐
+                    tableRep1.GetRow(15).GetCell(1).Paragraphs[0].Alignment = ParagraphAlignment.LEFT;
+                }
+                catch
+                {
+                    Console.WriteLine("MaintenanceUnit write error");
+                }
+
                 try
                 {
                     tableRep1.GetRow(16).GetCell(3).SetText(jsonMessage["next_year"]);
@@ -780,7 +803,7 @@ namespace table_OCRV41ForCsharp
             // request.Headers.Authorization = new AuthenticationHeaderValue(auth);
             request.RequestUri = new Uri(url);
             request.Content = new StringContent(body, MediaTypeWithQualityHeaderValue.Parse(contentType));
-            Console.WriteLine(request);
+            //Console.WriteLine(request);
             return request;
         }
 
@@ -1066,7 +1089,7 @@ namespace table_OCRV41ForCsharp
             {
                 if (jianyanOrjiance.Equals("检测"))
                 {
-                    int index = ObjsIndex("温度", objs);
+                    int index = ObjsIndex("温", objs);
                     temperature = objs["Response"]["TableDetections"][1]["Cells"][index]["Text"].ToString().Replace("\n", "").Replace("\r", "");
                     string temperature_pattern = @"\d{2,3}";
                     MatchCollection temperatureNeed = Regex.Matches(temperature, temperature_pattern);
@@ -1075,20 +1098,23 @@ namespace table_OCRV41ForCsharp
                 }
                 else
                 {
-                    int index = ObjsIndex("检验条件", objs);
-                    temperature = objs["Response"]["TableDetections"][1]["Cells"][index+1]["Text"].ToString().Replace("\n", "").Replace("\r", "");
-                    string temperature2 = objs["Response"]["TableDetections"][1]["Cells"][index + 2]["Text"].ToString().Replace("\n", "").Replace("\r", "");
-                    string temperature3 = objs["Response"]["TableDetections"][1]["Cells"][index + 3]["Text"].ToString().Replace("\n", "").Replace("\r", "");
-                    temperature = $"温度：{temperature}℃，  湿度：{temperature2}％ ， 电压：{temperature3}V";
+                    int index = ObjsIndex("温", objs);
+                    temperature = objs["Response"]["TableDetections"][1]["Cells"][index]["Text"].ToString().Replace("\n", "").Replace("\r", "");
+                    string temperature_pattern = @"\d{2,3}";
+                    MatchCollection temperatureNeed = Regex.Matches(temperature, temperature_pattern);
+                    temperature = $"温度：{temperatureNeed[0].ToString()}℃，  湿度：{temperatureNeed[1].ToString()}％ ， 电压：{temperatureNeed[2].ToString()}V";
                     Console.WriteLine("温度、湿度、电压: " + temperature);
                 }
                 
             }
             catch
             {
-                temperature = "温度：    ℃，  湿度：    ％ ， 电压：     V";
-
-                Console.WriteLine("温度、湿度、电压自动获取失败");
+                int index = ObjsIndex("检验条件", objs);
+                temperature = objs["Response"]["TableDetections"][1]["Cells"][index + 1]["Text"].ToString().Replace("\n", "").Replace("\r", "");
+                string temperature2 = objs["Response"]["TableDetections"][1]["Cells"][index + 2]["Text"].ToString().Replace("\n", "").Replace("\r", "");
+                string temperature3 = objs["Response"]["TableDetections"][1]["Cells"][index + 3]["Text"].ToString().Replace("\n", "").Replace("\r", "");
+                temperature = $"温度：{temperature}℃，  湿度：{temperature2}％ ， 电压：{temperature3}V";
+                Console.WriteLine("温度、湿度、电压: " + temperature);
             }
 
             string reportNum;
