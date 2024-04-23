@@ -22,6 +22,8 @@ namespace table_OCRV41ForCsharp
         const string API_KEY = "AKIDCLfBaq2DQVUVbsHoHan5Ml9Slxb5MUVn";
         const string SECRET_KEY = "f9gr9MRp9JIKRRDqMwdSBl9ORZijirto";
         private static readonly HttpClient Client = new HttpClient();
+        static List<double> previousInputs = new List<double>();
+        static List<double> previousAverages = new List<double>();
 
         public class PathMessage
         {
@@ -83,7 +85,7 @@ namespace table_OCRV41ForCsharp
                 DialogResult result = fileDialog.ShowDialog();
                 if (result == DialogResult.OK)
                 {
-                    foreach(string fileName in fileDialog.FileNames)
+                    foreach(string fileName in fileDialog.FileNames) 
                     {
                         result_dir.Add(fileName); // 获取用户选择的多个文件名的数组                                                              // 处理用户选择的文件路径
                     }
@@ -118,11 +120,16 @@ namespace table_OCRV41ForCsharp
                 }
 
             }
+
             int fileNum = 0;
+            bool usePreviousResults;
+            string input;
+            int flag = 0;
+
             foreach (string jsonPath in result_dir)
             {
-                fileNum++;
-                Console.WriteLine("-----------{0}-------------", fileNum);
+                
+                Console.WriteLine("-----------{0}-------------", fileNum+1);
                 // 把识别结果的json文档信息提取出来
                 jsonMessage = JsonMessage(jsonPath);
                 //根据模板，写入对应的word文档里面
@@ -149,8 +156,40 @@ namespace table_OCRV41ForCsharp
                 XWPFTable tableRep0 = tablesRep[0];
                 XWPFTable tableRep1 = tablesRep[1];
 
+                usePreviousResults = false;
 
-                
+                if (flag != 0)
+                {
+                    Console.WriteLine("是否使用上次输入的数据? (y/n)");
+                    input = Console.ReadLine().Trim().ToLower();
+                    if (input == "y")
+                    {
+                        usePreviousResults = true;
+                    }
+                }
+
+                List<double> inputs = new List<double>();
+                if (!usePreviousResults)
+                {
+                    inputs = GetNumbers("请输入9个数字：", 9);
+                }
+                else
+                {
+                    inputs = previousInputs;
+                }
+
+                previousInputs = inputs; // 保存输入值
+                List<double> averages = CalculateAverages(inputs);
+
+                foreach (var avg in averages)
+                {
+                    Console.WriteLine($"平均值：{avg:0.00}");
+                    previousAverages.Add(avg); // 保存平均值结果
+                }
+
+                fileNum++;
+                flag++;
+
                 //写入记录for模板3
                 try
                 {
@@ -1002,6 +1041,53 @@ namespace table_OCRV41ForCsharp
             result.Add("temperature", temperature);
 
             return result;
+        }
+
+        static List<double> GetNumbers(string prompt, int count)
+        {
+            List<double> numbers = new List<double>();
+            for (int i = 0; i < count; i++)
+            {
+                double number = GetValidNumber($"{i + 1}/{count} {prompt}");
+                numbers.Add(number);
+            }
+            return numbers;
+        }
+
+        static double GetValidNumber(string prompt)
+        {
+            double number;
+            bool isValid;
+            do
+            {
+                Console.Write(prompt);
+                isValid = double.TryParse(Console.ReadLine(), out number);
+                if (!isValid)
+                {
+                    Console.WriteLine("输入无效，请输入一个数字。");
+                }
+            } while (!isValid);
+            return number;
+        }
+
+        static List<double> CalculateAverages(List<double> numbers)
+        {
+            List<double> averages = new List<double>();
+            for (int i = 0; i < numbers.Count; i += 3)
+            {
+                if (i + 2 < numbers.Count)
+                {
+                    double average = (numbers[i] + numbers[i + 1] + numbers[i + 2]) / 3.0;
+                    averages.Add(Math.Round(average, 2));
+                }
+                else
+                {
+                    // 如果不足3个数字，计算剩余的平均值
+                    double average = numbers.GetRange(i, numbers.Count - i).Average();
+                    averages.Add(Math.Round(average, 2));
+                }
+            }
+            return averages;
         }
     }
 }
