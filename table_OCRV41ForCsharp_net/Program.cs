@@ -11,6 +11,7 @@ using NPOI.XWPF.UserModel;
 using System.Net.Http.Headers;
 using System.Security.Cryptography;
 using System.Text;
+using NPOI.SS.Formula.Functions;
 
 
 
@@ -934,21 +935,27 @@ namespace table_OCRV41ForCsharp
             return  path;
         }
 
-        static int ObjsIndex(string str,JObject objs)
+        static void ObjsIndex(string str,JObject objs,out int indexj,out int indexi,out bool isContain)
         {
-            int index = 0;
-            for (int i = 0; i < objs["Response"]["TableDetections"][1]["Cells"].Count(); i++)
-            {
-                var text = objs["Response"]["TableDetections"][1]["Cells"][i]["Text"];
-                var isContain = text.ToString().Contains(str);
-                if (isContain)
-                {
-                    index = i;
-                    break;
-                }
+            
+            indexi = 0;
+            indexj = 0;
+            isContain = false;
 
+            for (int j = 0; j < objs["Response"]["TableDetections"].Count(); j++)
+            {
+                for (int i = 0; i < objs["Response"]["TableDetections"][j]["Cells"].Count(); i++)
+                {
+                    var text = objs["Response"]["TableDetections"][j]["Cells"][i]["Text"];
+                    isContain = text.ToString().Contains(str);
+                    if (isContain)
+                    {
+                        indexi = i;
+                        indexj = j;
+                        return;
+                    }
+                }          
             }
-            return index;
         }
 
         static Dictionary<string, string> JsonMessage(string filePath)
@@ -961,18 +968,18 @@ namespace table_OCRV41ForCsharp
             string jianyanOrjiance = "检测";
             try
             {
-                int index = 0;
-                for (int i = 0; i < objs["Response"]["TableDetections"][0]["Cells"].Count(); i++)
-                {
-                    var isContain = objs["Response"]["TableDetections"][0]["Cells"][i]["Text"].ToString().Contains("RTD");
-                    if (isContain)
-                    {
-                        index = i;
-                        jianyanOrjiance = "检验";
-                        break;
-                    }
+                
+                int indexj;
+                int indexi;
+                bool isContain;
+                ObjsIndex("RTD", objs, out indexj, out indexi, out isContain);
 
+                if (isContain)
+                {
+                    jianyanOrjiance = "检验";                   
                 }
+
+
                 Console.WriteLine("当前图片是: " + jianyanOrjiance);
             }
             catch
@@ -986,9 +993,12 @@ namespace table_OCRV41ForCsharp
             string deviceCode;
             try
             {
-                int index = ObjsIndex("设备代码", objs)+1;
+                int indexj;
+                int indexi;
+                bool isContain;
+                ObjsIndex("设备代码", objs, out indexj, out indexi, out isContain);
 
-                deviceCode = objs["Response"]["TableDetections"][1]["Cells"][index]["Text"].ToString().Replace("\n", "").Replace("\r", "");
+                deviceCode = objs["Response"]["TableDetections"][indexj]["Cells"][indexi+1]["Text"].ToString().Replace("\n", "").Replace("\r", "");
                 
                 Console.WriteLine("设备代码: " + deviceCode);
             }
@@ -1000,8 +1010,11 @@ namespace table_OCRV41ForCsharp
             string model;
             try
             {
-                int index = ObjsIndex("型号", objs) + 1;
-                model = objs["Response"]["TableDetections"][1]["Cells"][index]["Text"].ToString().Replace("\n", "").Replace("\r", "");
+                int indexj;
+                int indexi;
+                bool isContain;
+                ObjsIndex("型号", objs, out indexj, out indexi, out isContain);
+                model = objs["Response"]["TableDetections"][indexj]["Cells"][indexi+1]["Text"].ToString().Replace("\n", "").Replace("\r", "");
                 Console.WriteLine("型号: " + model);
             }
             catch
@@ -1012,8 +1025,11 @@ namespace table_OCRV41ForCsharp
             string serialNum;
             try
             {
-                int index = ObjsIndex("产品编号", objs) + 1;
-                serialNum = objs["Response"]["TableDetections"][1]["Cells"][index]["Text"].ToString().Replace("\n", "").Replace("\r", "");
+                int indexj;
+                int indexi;
+                bool isContain;
+                ObjsIndex("产品编号", objs, out indexj, out indexi, out isContain);
+                serialNum = objs["Response"]["TableDetections"][indexj]["Cells"][indexi+1]["Text"].ToString().Replace("\n", "").Replace("\r", "");
                 Console.WriteLine("产品编号: " + serialNum);
             }
             catch
@@ -1024,8 +1040,11 @@ namespace table_OCRV41ForCsharp
             string ManufacturingUnit;
             try
             {
-                int index = ObjsIndex("制造单位", objs) + 1;
-                ManufacturingUnit = objs["Response"]["TableDetections"][1]["Cells"][index]["Text"].ToString().Replace("\n", "").Replace("\r", "");
+                int indexj;
+                int indexi;
+                bool isContain;
+                ObjsIndex("制造单位", objs, out indexj, out indexi, out isContain);
+                ManufacturingUnit = objs["Response"]["TableDetections"][indexj]["Cells"][indexi+1]["Text"].ToString().Replace("\n", "").Replace("\r", "");
                 Console.WriteLine("制造单位: " + ManufacturingUnit);
             }
             catch
@@ -1036,8 +1055,11 @@ namespace table_OCRV41ForCsharp
             string userName;
             try
             {
-                int index = ObjsIndex("使用单位", objs) + 1;
-                userName = objs["Response"]["TableDetections"][1]["Cells"][index]["Text"].ToString().Replace("\n", "").Replace("\r", "");
+                int indexj;
+                int indexi;
+                bool isContain;
+                ObjsIndex("使用单位", objs, out indexj, out indexi, out isContain);
+                userName = objs["Response"]["TableDetections"][indexj]["Cells"][indexi+1]["Text"].ToString().Replace("\n", "").Replace("\r", "");
                 Console.WriteLine("使用单位: " + userName);
             }
             catch
@@ -1048,8 +1070,11 @@ namespace table_OCRV41ForCsharp
             string UsingAddress;
             try
             {
-                int index = ObjsIndex("安装地点", objs) + 1;
-                UsingAddress = objs["Response"]["TableDetections"][1]["Cells"][index]["Text"].ToString().Replace("\n", "").Replace("\r", "");
+                int indexj;
+                int indexi;
+                bool isContain;
+                ObjsIndex("安装地点", objs, out indexj, out indexi, out isContain);
+                UsingAddress = objs["Response"]["TableDetections"][indexj]["Cells"][indexi+1]["Text"].ToString().Replace("\n", "").Replace("\r", "");
                 Console.WriteLine("安装地点: " + UsingAddress);
             }
             catch
@@ -1060,8 +1085,11 @@ namespace table_OCRV41ForCsharp
             string MaintenanceUnit;
             try
             {
-                int index = ObjsIndex("维护保养单位", objs) + 1;
-                MaintenanceUnit = objs["Response"]["TableDetections"][1]["Cells"][index]["Text"].ToString().Replace("\n", "").Replace("\r", "");
+                int indexj;
+                int indexi;
+                bool isContain;
+                ObjsIndex("维护保养单位", objs, out indexj, out indexi, out isContain);
+                MaintenanceUnit = objs["Response"]["TableDetections"][indexj]["Cells"][indexi+1]["Text"].ToString().Replace("\n", "").Replace("\r", "");
                 Console.WriteLine("维护保养单位: " + MaintenanceUnit);
             }
             catch
@@ -1072,8 +1100,11 @@ namespace table_OCRV41ForCsharp
             string speed;
             try
             {
-                int index = ObjsIndex("额定速度", objs) + 1;
-                speed = objs["Response"]["TableDetections"][1]["Cells"][index]["Text"].ToString().Replace("\n", "");
+                int indexj;
+                int indexi;
+                bool isContain;
+                ObjsIndex("额定速度", objs, out indexj, out indexi, out isContain);
+                speed = objs["Response"]["TableDetections"][indexj]["Cells"][indexi+1]["Text"].ToString().Replace("\n", "");
                 string speed_pattern = @"\d{1}.\d{1,2}";
                 var speedNeed = Regex.Matches(speed, speed_pattern);
                 speed = speedNeed[0].ToString();
@@ -1089,8 +1120,11 @@ namespace table_OCRV41ForCsharp
             {
                 if (jianyanOrjiance.Equals("检测"))
                 {
-                    int index = ObjsIndex("温", objs);
-                    temperature = objs["Response"]["TableDetections"][1]["Cells"][index]["Text"].ToString().Replace("\n", "").Replace("\r", "");
+                    int indexj;
+                    int indexi;
+                    bool isContain;
+                    ObjsIndex("温", objs, out indexj, out indexi, out isContain);
+                    temperature = objs["Response"]["TableDetections"][indexj]["Cells"][indexi]["Text"].ToString().Replace("\n", "").Replace("\r", "");
                     string temperature_pattern = @"\d{2,3}";
                     MatchCollection temperatureNeed = Regex.Matches(temperature, temperature_pattern);
                     temperature = $"温度：{temperatureNeed[0].ToString()}℃，  湿度：{temperatureNeed[1].ToString()}％ ， 电压：{temperatureNeed[2].ToString()}V";
@@ -1098,8 +1132,11 @@ namespace table_OCRV41ForCsharp
                 }
                 else
                 {
-                    int index = ObjsIndex("温", objs);
-                    temperature = objs["Response"]["TableDetections"][1]["Cells"][index]["Text"].ToString().Replace("\n", "").Replace("\r", "");
+                    int indexj;
+                    int indexi;
+                    bool isContain;
+                    ObjsIndex("温", objs, out indexj, out indexi, out isContain);
+                    temperature = objs["Response"]["TableDetections"][indexj]["Cells"][indexi]["Text"].ToString().Replace("\n", "").Replace("\r", "");
                     string temperature_pattern = @"\d{2,3}";
                     MatchCollection temperatureNeed = Regex.Matches(temperature, temperature_pattern);
                     temperature = $"温度：{temperatureNeed[0].ToString()}℃，  湿度：{temperatureNeed[1].ToString()}％ ， 电压：{temperatureNeed[2].ToString()}V";
@@ -1109,10 +1146,13 @@ namespace table_OCRV41ForCsharp
             }
             catch
             {
-                int index = ObjsIndex("检验条件", objs);
-                temperature = objs["Response"]["TableDetections"][1]["Cells"][index + 1]["Text"].ToString().Replace("\n", "").Replace("\r", "");
-                string temperature2 = objs["Response"]["TableDetections"][1]["Cells"][index + 2]["Text"].ToString().Replace("\n", "").Replace("\r", "");
-                string temperature3 = objs["Response"]["TableDetections"][1]["Cells"][index + 3]["Text"].ToString().Replace("\n", "").Replace("\r", "");
+                int indexj;
+                int indexi;
+                bool isContain;
+                ObjsIndex("检验条件", objs, out indexj, out indexi, out isContain);
+                temperature = objs["Response"]["TableDetections"][indexj]["Cells"][indexi + 1]["Text"].ToString().Replace("\n", "").Replace("\r", "");
+                string temperature2 = objs["Response"]["TableDetections"][indexj]["Cells"][indexi + 2]["Text"].ToString().Replace("\n", "").Replace("\r", "");
+                string temperature3 = objs["Response"]["TableDetections"][indexj]["Cells"][indexi + 3]["Text"].ToString().Replace("\n", "").Replace("\r", "");
                 temperature = $"温度：{temperature}℃，  湿度：{temperature2}％ ， 电压：{temperature3}V";
                 Console.WriteLine("温度、湿度、电压: " + temperature);
             }
@@ -1130,18 +1170,12 @@ namespace table_OCRV41ForCsharp
                 {
                     jianyanOrjianceReportNum = "RTE";
                 }
-                int index = 0;
-                for (int i = 0; i < objs["Response"]["TableDetections"][0]["Cells"].Count(); i++)
-                {
-                    var isContain = objs["Response"]["TableDetections"][0]["Cells"][i]["Text"].ToString().Contains(jianyanOrjianceReportNum);
-                    if (isContain)
-                    {
-                        index = i;
-                        break;
-                    }
+                int indexj;
+                int indexi;
+                bool isContain;
+                ObjsIndex(jianyanOrjianceReportNum, objs, out indexj, out indexi, out isContain);
 
-                }
-                reportNum = objs["Response"]["TableDetections"][0]["Cells"][index]["Text"].ToString();
+                reportNum = objs["Response"]["TableDetections"][indexj]["Cells"][indexi]["Text"].ToString();
                 //MatchCollection matchs = Regex.Matches(reportNum, @"^\d{8}");
                 //reportNum2 = matchs[0].ToString().Substring(1,7);
                 reportNum2 = reportNum.Substring(reportNum.Length - 7);
@@ -1169,8 +1203,12 @@ namespace table_OCRV41ForCsharp
                 {
                     jianyanOrjianceDate = "检测日期";
                 }
-                int index = ObjsIndex(jianyanOrjianceDate, objs);
-                date = objs["Response"]["TableDetections"][1]["Cells"][index]["Text"].ToString().Replace("\n", "").Replace("\r", "");
+
+                int indexj;
+                int indexi;
+                bool isContain;
+                ObjsIndex(jianyanOrjianceDate, objs, out indexj, out indexi, out isContain);
+                date = objs["Response"]["TableDetections"][indexj]["Cells"][indexi]["Text"].ToString().Replace("\n", "").Replace("\r", "");
                 string date_or_month_pattern = @"\d{4}年\d{1,2}[\u4e00-\u9fa5]\d{0,}日|\d{4}年\d{1,2}[\u4e00-\u9fa5]";
                 MatchCollection dateNeed = Regex.Matches(date, date_or_month_pattern);
                 if (dateNeed != null)
