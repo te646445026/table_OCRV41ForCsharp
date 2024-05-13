@@ -289,11 +289,16 @@ namespace table_OCRV41ForCsharp
 
                 try
                 {
+                    if (jsonMessage["jianyanOrjiance"].Equals("检验"))
+                    {
+                        paragraphsRec[0].CreateRun().SetText("D");
+                    }
+                    else
+                    {
+                        paragraphsRec[0].CreateRun().SetText("E");
+                    }
                     paragraphsRec[0].CreateRun().SetText(jsonMessage["reportNum2"]);
-                    //if (jsonMessage["xiansuqiDirectionForReport"] == "双向")
-                    //{
-                    //    paragraphsRec[0].CreateRun().SetText("D");
-                    //}
+                    
                 }
                 catch
                 {
@@ -450,6 +455,14 @@ namespace table_OCRV41ForCsharp
 
                 try
                 {
+                    if (jsonMessage["jianyanOrjiance"].Equals("检验"))
+                    {
+                        paragraphsRep[0].CreateRun().SetText("D");
+                    }
+                    else
+                    {
+                        paragraphsRep[0].CreateRun().SetText("E");
+                    }
                     paragraphsRep[0].CreateRun().SetText(jsonMessage["reportNum2"]);
                     //if (jsonMessage["xiansuqiDirectionForReport"] == "双向")
                     //{
@@ -843,41 +856,26 @@ namespace table_OCRV41ForCsharp
             string temperature;
             try
             {
-                if (jianyanOrjiance.Equals("检测"))
-                {
-                    int indexj;
-                    int indexi;
-                    bool isContain;
-                    ObjsIndex("温", objs, out indexj, out indexi, out isContain);
-                    temperature = objs["Response"]["TableDetections"][indexj]["Cells"][indexi]["Text"].ToString().Replace("\n", "").Replace("\r", "");
-                    string temperature_pattern = @"\d{2,3}";
-                    MatchCollection temperatureNeed = Regex.Matches(temperature, temperature_pattern);
-                    temperature = $"温度：{temperatureNeed[0].ToString()}℃，  湿度：{temperatureNeed[1].ToString()}％ ， 电压：{temperatureNeed[2].ToString()}V";
-                    Console.WriteLine("温度、湿度、电压: " + temperature);
-                }
-                else
-                {
-                    int indexj;
-                    int indexi;
-                    bool isContain;
-                    ObjsIndex("温", objs, out indexj, out indexi, out isContain);
-                    temperature = objs["Response"]["TableDetections"][indexj]["Cells"][indexi]["Text"].ToString().Replace("\n", "").Replace("\r", "");
-                    string temperature_pattern = @"\d{2,3}";
-                    MatchCollection temperatureNeed = Regex.Matches(temperature, temperature_pattern);
-                    temperature = $"温度：{temperatureNeed[0].ToString()}℃，  湿度：{temperatureNeed[1].ToString()}％ ， 电压：{temperatureNeed[2].ToString()}V";
-                    Console.WriteLine("温度、湿度、电压: " + temperature);
-                }
                 
+                int indexj;
+                int indexi;
+                bool isContain;
+                ObjsIndex("条件", objs, out indexj, out indexi, out isContain);
+                temperature = objs["Response"]["TableDetections"][indexj]["Cells"][indexi+1]["Text"].ToString().Replace("\n", "").Replace("\r", "");
+                string temperature_pattern = @"\d{2,3}";
+                MatchCollection temperatureNeed = Regex.Matches(temperature, temperature_pattern);
+                temperature = $"温度：{temperatureNeed[0].ToString()}℃，  湿度：{temperatureNeed[1].ToString()}％ ， 电压：{temperatureNeed[2].ToString()}V";
+                Console.WriteLine("温度、湿度、电压: " + temperature);
             }
             catch
             {
                 int indexj;
                 int indexi;
                 bool isContain;
-                ObjsIndex("检验条件", objs, out indexj, out indexi, out isContain);
+                ObjsIndex("条件", objs, out indexj, out indexi, out isContain);
                 temperature = objs["Response"]["TableDetections"][indexj]["Cells"][indexi + 1]["Text"].ToString().Replace("\n", "").Replace("\r", "");
-                string temperature2 = objs["Response"]["TableDetections"][indexj]["Cells"][indexi + 2]["Text"].ToString().Replace("\n", "").Replace("\r", "");
-                string temperature3 = objs["Response"]["TableDetections"][indexj]["Cells"][indexi + 3]["Text"].ToString().Replace("\n", "").Replace("\r", "");
+                string temperature2 = objs["Response"]["TableDetections"][indexj]["Cells"][indexi + 3]["Text"].ToString().Replace("\n", "").Replace("\r", "");
+                string temperature3 = objs["Response"]["TableDetections"][indexj]["Cells"][indexi + 5]["Text"].ToString().Replace("\n", "").Replace("\r", "");
                 temperature = $"温度：{temperature}℃，  湿度：{temperature2}％ ， 电压：{temperature3}V";
                 Console.WriteLine("温度、湿度、电压: " + temperature);
             }
@@ -1038,6 +1036,7 @@ namespace table_OCRV41ForCsharp
             result.Add("next_year_flag", next_year_flag);
             result.Add("shenhe_date", shenhe_date);
             result.Add("temperature", temperature);
+            result.Add("jianyanOrjiance", jianyanOrjiance);
 
             return result;
         }
