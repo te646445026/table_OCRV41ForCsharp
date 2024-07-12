@@ -639,6 +639,7 @@ namespace table_OCRV41ForCsharp
                     Console.WriteLine("");
                 }
                 //增加消息框弹出提醒
+                
                 MessageBox.Show("请选择识别结果存放的文件夹");
                 FolderBrowserDialog folder2 = new FolderBrowserDialog();
                 folder2.Description = "请选择识别结果存放的文件夹";
