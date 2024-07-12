@@ -627,6 +627,7 @@ namespace table_OCRV41ForCsharp
             if (!File.Exists(path.DefaultJsonFilePath))
             {               
                 //选择默认路径
+
                 MessageBox.Show("请选择需要识别的图片所在文件夹");
                 FolderBrowserDialog folder1 = new FolderBrowserDialog();
                 folder1.Description = "请选择需要识别的图片所在文件夹";
