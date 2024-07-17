@@ -1,7 +1,4 @@
-﻿using System;
-using System.IO;
-using System.Collections.Generic;
-using System.Linq;
+﻿
 using System.Text.RegularExpressions;
 using System.Threading;
 using Newtonsoft.Json; //https://www.nuget.org/packages/Newtonsoft.Json
@@ -11,32 +8,28 @@ using NPOI.XWPF.UserModel;
 using System.Net.Http.Headers;
 using System.Security.Cryptography;
 using System.Text;
-using NPOI.SS.Formula.Functions;
 
 
 
 namespace table_OCRV41ForCsharp
 {
     internal class Program
+
     {
-        // KEY信息
-        const string API_KEY = "AKIDCLfBaq2DQVUVbsHoHan5Ml9Slxb5MUVn";
-        const string SECRET_KEY = "f9gr9MRp9JIKRRDqMwdSBl9ORZijirto";
+        // KEY信息存在key.json文件
+        
         private static readonly HttpClient Client = new HttpClient();
 
-        public class PathMessage
-        {
-            public string? FolderPath { get; set; }
-            public string? DefaultJsonFilePath { get; set; }
-            public string? DataFilePath { get; set; }
-            public string? DataJsonFilePath { get; set; }
-        }
+        
 
         [STAThread]
         static void Main(string[] args)
         {
-            var secretId = API_KEY;
-            var secretKey = SECRET_KEY;
+            
+            KEY myKey = new KEY();
+            myKey = CheckKey();
+            var secretId = myKey.API_KEY;
+            var secretKey = myKey.SECRET_KEY;
             var token = "";
             var service = "ocr";
             var version = "2018-11-19";
@@ -676,6 +669,40 @@ namespace table_OCRV41ForCsharp
 
             return  path;
         }
+        static KEY CheckKey()
+        {
+            KEY? myKey = new KEY();
+            string keyPath = System.Environment.CurrentDirectory + @"\key.json";
+            if (!File.Exists(keyPath))
+            {
+                MessageBox.Show("密钥文件缺失,点击确认后手动输入");
+
+                Console.WriteLine("请输入API_KEY");
+                do
+                {
+                    myKey.API_KEY = Console.ReadLine();
+                } while (myKey.API_KEY == null);
+
+                Console.WriteLine("请输入SECRET_KEY");
+                do
+                {
+                    myKey.SECRET_KEY = Console.ReadLine();
+                } while (myKey.SECRET_KEY == null);
+
+                string keyJson = JsonConvert.SerializeObject(myKey);
+
+                File.WriteAllText(keyPath, keyJson);
+
+            }
+            else
+            {
+                string keyJson = File.ReadAllText(keyPath);
+                myKey = JsonConvert.DeserializeObject<KEY>(keyJson);
+            }
+
+            return myKey;
+
+        }
 
         static void ObjsIndex(string str,JObject objs,out int indexj,out int indexi,out bool isContain)
         {
@@ -1044,5 +1071,19 @@ namespace table_OCRV41ForCsharp
 
             return result;
         }
+    }
+
+    public class PathMessage
+    {
+        public string? FolderPath { get; set; }
+        public string? DefaultJsonFilePath { get; set; }
+        public string? DataFilePath { get; set; }
+        public string? DataJsonFilePath { get; set; }
+    }
+
+    public class KEY
+    {
+        public string API_KEY { get; set; }
+        public string SECRET_KEY { get; set; }
     }
 }

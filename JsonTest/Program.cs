@@ -8,44 +8,37 @@ namespace JsonTest
     {
         static void Main(string[] args)
         {
+            KEY myKey = new KEY();
+
+            string path = System.Environment.CurrentDirectory + @"\key.json";
+
             
-            string json = File.ReadAllText(@"E:\\PythonProject\\限速器自动化\\识别结果\\2.json");
-            JObject? objs = JObject.Parse(json);
-            string deviceCode;
-            deviceCode = objs["tables_result"][0]["body"][1]["words"].ToString();
-            Console.WriteLine(deviceCode);
-            bool a;
-            a = objs["tables_result"][0]["body"][1]["words"].ToString().Contains(deviceCode);
-            Console.WriteLine(a);
-            
-            
-            var b = objs["tables_result"][0]["body"][1]["words"].ToString().Contains("日期");
 
-            Console.WriteLine(objs["tables_result"][0]["body"].Count());
+            string key = File.ReadAllText(path);
 
-            int length = 0;
+            Console.WriteLine(key);
 
-            foreach (var item in objs["tables_result"][0]["body"])
-            {
-                length++;
-            }
+            myKey = JsonConvert.DeserializeObject<KEY>(key);
 
-            Console.WriteLine(length);
+            Console.WriteLine(myKey.API_KEY);
+            Console.WriteLine(myKey.SECRET_KEY);
 
-            for (var i = 0; i < length; i++)
-            {
-                var isContain = objs["tables_result"][0]["body"][i]["words"].ToString().Contains("设备代码");
-                if (isContain)
-                {
-                    Console.WriteLine(i);
-                    Console.WriteLine(objs["tables_result"][0]["body"][i+1]["words"].ToString());
-                    Console.WriteLine("------------------------------------------------------");
-                    return;
-                }
-            }
+        }
+    }
 
+    public class KEY
+    {
+        public string API_KEY { get; set; }
+        public string SECRET_KEY { get; set; }
 
+        private string KeyTOJson()
+        {
+            return JsonConvert.SerializeObject(this);
+        }
 
+        public void WriteKey(string path)
+        {
+            File.WriteAllText(path,KeyTOJson());
         }
     }
 }
