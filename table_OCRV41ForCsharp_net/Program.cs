@@ -874,7 +874,7 @@ namespace table_OCRV41ForCsharp
                 bool isContain;
                 ObjsIndex("额定速度", objs, out indexj, out indexi, out isContain);
                 speed = objs["Response"]["TableDetections"][indexj]["Cells"][indexi+1]["Text"].ToString().Replace("\n", "");
-                string speed_pattern = @"\d{1}.\d{1,2}";
+                string speed_pattern = @"(\d+(\.\d+)?)";
                 var speedNeed = Regex.Matches(speed, speed_pattern);
                 speed = speedNeed[0].ToString();
                 Console.WriteLine("速度：" + speed);
@@ -922,7 +922,7 @@ namespace table_OCRV41ForCsharp
                 }
                 else
                 {
-                    jianyanOrjianceReportNum = "RTE";
+                    jianyanOrjianceReportNum = "RTC";
                 }
                 int indexj;
                 int indexi;
