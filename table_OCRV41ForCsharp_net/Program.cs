@@ -26,8 +26,9 @@ namespace table_OCRV41ForCsharp
             var ocrService = serviceProvider.GetService<IOcrService>();
             var pathService = serviceProvider.GetService<IPathService>();
             var keyService = serviceProvider.GetService<IKeyService>();
+            var getFileContentAsBase64Service = serviceProvider.GetService<IGetFileContentAsBase64Service>();
 
-            await ProcessAsync(ocrService, pathService, keyService);
+            await ProcessAsync(ocrService, pathService,getFileContentAsBase64Service);
 
         }
         /**
@@ -35,17 +36,7 @@ namespace table_OCRV41ForCsharp
         * @param path 文件路径
         * @return base64编码信息，不带文件头
         */
-        static string GetFileContentAsBase64(string path)
-        {
-            using (FileStream filestream = new FileStream(path, FileMode.Open))
-            {
-                byte[] arr = new byte[filestream.Length];
-                filestream.Read(arr, 0, (int)filestream.Length);
-                string base64 = Convert.ToBase64String(arr);
-                base64 = "{\"ImageBase64\":\"data:image/png;base64," + base64 + "\"}";
-                return base64;
-            }
-        }
+        
 
         static void ObjsIndex(string str,JObject objs,out int indexj,out int indexi,out bool isContain)
         {
@@ -420,6 +411,7 @@ namespace table_OCRV41ForCsharp
             
             services.AddSingleton<IPathService, PathService>();
             services.AddSingleton<IKeyService, KeyService>();
+            services.AddSingleton<IGetFileContentAsBase64Service, GetFileContentAsBase64Service>();
 
             // 使用工厂模式注册 TencentOcrService
             services.AddSingleton<IOcrService>(provider =>
@@ -429,14 +421,16 @@ namespace table_OCRV41ForCsharp
                 var secretKey = keyService.CheckKey().SECRET_KEY;
                 return new TencentOcrService(secretId, secretKey);
             });
+
+
         }
 
-        private static async Task ProcessAsync(IOcrService ocrService, IPathService pathService, IKeyService keyService)
+        private static async Task ProcessAsync(IOcrService ocrService, IPathService pathService,IGetFileContentAsBase64Service getFileContentAsBase64Service)
         {
             // 应用程序的主要逻辑
             // ...
-            KEY myKey = new KEY();
-            myKey = keyService.CheckKey();
+            //KEY myKey = new KEY();
+            //myKey = keyService.CheckKey();
 
             string? workPath;
             string data_dir = "";
@@ -489,7 +483,7 @@ namespace table_OCRV41ForCsharp
                 foreach (FileInfo file in directoryInfo.GetFiles())
                 {
                     Console.WriteLine("{0}: {1} 正在处理：", num + 1, file.Name.Split('.')[0]);
-                    string imageBase64 = GetFileContentAsBase64(file.FullName);
+                    string imageBase64 = getFileContentAsBase64Service.GetFileContentAsBase64(file.FullName);
                     string data_json = await ocrService.RecognizeTableAsync(imageBase64);
                     string jsonFile_name = folder_dir + file.Name.Split('.')[0] + ".json";
                     File.WriteAllText(jsonFile_name, data_json);
