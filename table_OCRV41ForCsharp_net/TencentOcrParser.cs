@@ -1,4 +1,5 @@
 ﻿using Newtonsoft.Json.Linq;
+using System.Text.RegularExpressions;
 
 namespace table_OCRV41ForCsharp;
 
@@ -333,6 +334,26 @@ public class TencentOcrParser:IOcrParser
         return result;
     }
 
+    static void ObjsIndex(string str, JObject objs, out int indexj, out int indexi, out bool isContain)
+    {
 
+        indexi = 0;
+        indexj = 0;
+        isContain = false;
+
+        for (int j = 0; j < objs["Response"]["TableDetections"].Count(); j++)
+        {
+            for (int i = 0; i < objs["Response"]["TableDetections"][j]["Cells"].Count(); i++)
+            {
+                var text = objs["Response"]["TableDetections"][j]["Cells"][i]["Text"];
+                isContain = text.ToString().Contains(str);
+                if (isContain)
+                {
+                    indexi = i;
+                    indexj = j;
+                    return;
+                }
+            }
+        }
     }
 }
