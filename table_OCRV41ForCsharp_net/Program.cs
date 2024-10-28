@@ -1,35 +1,33 @@
-﻿
-using System.Text.RegularExpressions;
-using System.Threading;
-using Newtonsoft.Json; //https://www.nuget.org/packages/Newtonsoft.Json
-using Newtonsoft.Json.Linq;
-using System.Collections;
-using NPOI.XWPF.UserModel;
+﻿using System.Collections;
 using Microsoft.Extensions.DependencyInjection;
+using NPOI.XWPF.UserModel;
 
-
-
-namespace table_OCRV41ForCsharp
+namespace table_OCRV41ForCsharp_net
 {
     internal class Program
 
     {
 
         [STAThread]
-        public static async Task Main(string[] args)
+        public static void Main(string[] args)
         {
             var serviceCollection = new ServiceCollection();
             ConfigureServices(serviceCollection);
 
             var serviceProvider = serviceCollection.BuildServiceProvider();
 
-            var ocrService = serviceProvider.GetService<IOcrService>();
-            var pathService = serviceProvider.GetService<IPathService>();
-            var keyService = serviceProvider.GetService<IKeyService>();
-            var getFileContentAsBase64Service = serviceProvider.GetService<IGetFileContentAsBase64Service>();
-
-            await ProcessAsync(ocrService, pathService,getFileContentAsBase64Service);
-
+            //var ocrService = serviceProvider.GetService<IOcrService>();
+            //var pathService = serviceProvider.GetService<IPathService>();
+            //var keyService = serviceProvider.GetService<IKeyService>();
+            //var getFileContentAsBase64Service = serviceProvider.GetService<IGetFileContentAsBase64Service>();
+            
+            //var ocrService = serviceProvider.GetService<IOcrService>();
+            //var pathService = serviceProvider.GetService<IPathService>();
+            //var getFileContentAsBase64Service = serviceProvider.GetService<IGetFileContentAsBase64Service>();
+            //await ProcessAsync(ocrService, pathService,getFileContentAsBase64Service);
+            
+            
+            ProcessAsync(serviceProvider);
         }
         /**
         * 获取文件base64编码
@@ -38,13 +36,13 @@ namespace table_OCRV41ForCsharp
         */
         
 
-        static void ObjsIndex(string str,JObject objs,out int indexj,out int indexi,out bool isContain)
+        /*static void ObjsIndex(string str,JObject objs,out int indexj,out int indexi,out bool isContain)
         {
             
             indexi = 0;
             indexj = 0;
             isContain = false;
-
+        
             for (int j = 0; j < objs["Response"]["TableDetections"].Count(); j++)
             {
                 for (int i = 0; i < objs["Response"]["TableDetections"][j]["Cells"].Count(); i++)
@@ -59,15 +57,15 @@ namespace table_OCRV41ForCsharp
                     }
                 }          
             }
-        }
+        }*/
 
-        static Dictionary<string, string> JsonMessage(string filePath)
+        /*static Dictionary<string, string> JsonMessage(string filePath)
         {
             Dictionary<string, string> result = new Dictionary<string, string>();
             string json = File.ReadAllText(filePath);
             JObject? objs = JObject.Parse(json);
-
-
+        
+        
             string jianyanOrjiance = "检测";
             try
             {
@@ -76,19 +74,19 @@ namespace table_OCRV41ForCsharp
                 int indexi;
                 bool isContain;
                 ObjsIndex("RTD", objs, out indexj, out indexi, out isContain);
-
+        
                 if (isContain)
                 {
                     jianyanOrjiance = "检验";                   
                 }
-
-
+        
+        
                 Console.WriteLine("当前图片是: " + jianyanOrjiance);
             }
             catch
             {
                 Console.WriteLine("获取检验还是检测失败,默认设置为检测" );
-
+        
             }
             
             
@@ -100,7 +98,7 @@ namespace table_OCRV41ForCsharp
                 int indexi;
                 bool isContain;
                 ObjsIndex("设备代码", objs, out indexj, out indexi, out isContain);
-
+        
                 deviceCode = objs["Response"]["TableDetections"][indexj]["Cells"][indexi+1]["Text"].ToString().Replace("\n", "").Replace("\r", "");
                 
                 Console.WriteLine("设备代码: " + deviceCode);
@@ -244,7 +242,7 @@ namespace table_OCRV41ForCsharp
                 temperature = $"温度：{temperature}℃，  湿度：{temperature2}％ ， 电压：{temperature3}V";
                 Console.WriteLine("温度、湿度、电压: " + temperature);
             }
-
+        
             string reportNum;
             string reportNum2;
             string jianyanOrjianceReportNum;
@@ -262,13 +260,13 @@ namespace table_OCRV41ForCsharp
                 int indexi;
                 bool isContain;
                 ObjsIndex(jianyanOrjianceReportNum, objs, out indexj, out indexi, out isContain);
-
+        
                 reportNum = objs["Response"]["TableDetections"][indexj]["Cells"][indexi]["Text"].ToString();
                 //MatchCollection matchs = Regex.Matches(reportNum, @"^\d{8}");
                 //reportNum2 = matchs[0].ToString().Substring(1,7);
                 reportNum2 = reportNum.Substring(reportNum.Length - 7);
                 Console.WriteLine("报告编号: " + reportNum2);
-
+        
             }
             catch
             {
@@ -291,7 +289,7 @@ namespace table_OCRV41ForCsharp
                 {
                     jianyanOrjianceDate = "检测日期";
                 }
-
+        
                 int indexj;
                 int indexi;
                 bool isContain;
@@ -319,7 +317,7 @@ namespace table_OCRV41ForCsharp
                         Console.WriteLine("请输入下次检验日期间隔，1代表1年，2代表2年: ");
                         nextdate = Console.ReadLine();
                     }
-
+        
                     DateTime next_year_date = dateforcell.AddYears(int.Parse(nextdate));
                     next_year = next_year_date.ToString("yyyy年MM月dd日");
                     next_year_flag = "";
@@ -382,7 +380,7 @@ namespace table_OCRV41ForCsharp
                 xiansuqiDirection = "☐  单向 ☑  双向";
                 xiansuqiDirectionForReport = "双向";
             }
-
+        
             result.Add("userName", userName);
             result.Add("MaintenanceUnit", MaintenanceUnit);
             result.Add("ManufacturingUnit", ManufacturingUnit);
@@ -402,9 +400,9 @@ namespace table_OCRV41ForCsharp
             result.Add("shenhe_date", shenhe_date);
             result.Add("temperature", temperature);
             result.Add("jianyanOrjiance", jianyanOrjiance);
-
+        
             return result;
-        }
+        }*/
 
         private static void ConfigureServices(IServiceCollection services)
         {
@@ -412,6 +410,7 @@ namespace table_OCRV41ForCsharp
             services.AddSingleton<IPathService, PathService>();
             services.AddSingleton<IKeyService, KeyService>();
             services.AddSingleton<IGetFileContentAsBase64Service, GetFileContentAsBase64Service>();
+            services.AddSingleton<IOcrParser, TencentOcrParser>();
 
             // 使用工厂模式注册 TencentOcrService
             services.AddSingleton<IOcrService>(provider =>
@@ -425,7 +424,7 @@ namespace table_OCRV41ForCsharp
 
         }
 
-        private static async Task ProcessAsync(IOcrService ocrService, IPathService pathService,IGetFileContentAsBase64Service getFileContentAsBase64Service)
+        private static async Task ProcessAsync( IServiceProvider serviceProvider)
         {
             // 应用程序的主要逻辑
             // ...
@@ -433,11 +432,17 @@ namespace table_OCRV41ForCsharp
             //myKey = keyService.CheckKey();
 
             string? workPath;
-            string data_dir = "";
-            string folder_dir = "";
+            string dataDir = "";
+            string folderDir = "";
+            
+            var ocrService = serviceProvider.GetService<IOcrService>();
+            var pathService = serviceProvider.GetService<IPathService>();
+            var getFileContentAsBase64Service = serviceProvider.GetService<IGetFileContentAsBase64Service>();
+            var ocrParser = serviceProvider.GetService<IOcrParser>();
 
-            ArrayList result_dir = new ArrayList();
-            Dictionary<string, string> jsonMessage = new Dictionary<string, string>();
+            ArrayList resultDir = new ArrayList();
+           // Dictionary<string, string> jsonMessage = new Dictionary<string, string>();
+            OcrResult resultForJsonMessage = new OcrResult();
 
             PathMessage path = pathService.CheckDefaultPath();
             workPath = path.FolderPath;
@@ -450,9 +455,9 @@ namespace table_OCRV41ForCsharp
             {
                 //从json文件中读取
 
-                data_dir = path.DataFilePath + "\\";
+                dataDir = path.DataFilePath + "\\";
 
-                folder_dir = path.DataJsonFilePath + "\\";
+                folderDir = path.DataJsonFilePath + "\\";
 
 
             }
@@ -472,20 +477,20 @@ namespace table_OCRV41ForCsharp
                 {
                     foreach (string fileName in fileDialog.FileNames)
                     {
-                        result_dir.Add(fileName); // 获取用户选择的多个文件名的数组                                                              // 处理用户选择的文件路径
+                        resultDir.Add(fileName); // 获取用户选择的多个文件名的数组                                                              // 处理用户选择的文件路径
                     }
                 }
             }
             if (situation == "1")
             {
                 int num = 0;
-                DirectoryInfo directoryInfo = new DirectoryInfo(data_dir);
+                DirectoryInfo directoryInfo = new DirectoryInfo(dataDir);
                 foreach (FileInfo file in directoryInfo.GetFiles())
                 {
                     Console.WriteLine("{0}: {1} 正在处理：", num + 1, file.Name.Split('.')[0]);
                     string imageBase64 = getFileContentAsBase64Service.GetFileContentAsBase64(file.FullName);
                     string data_json = await ocrService.RecognizeTableAsync(imageBase64);
-                    string jsonFile_name = folder_dir + file.Name.Split('.')[0] + ".json";
+                    string jsonFile_name = folderDir + file.Name.Split('.')[0] + ".json";
                     File.WriteAllText(jsonFile_name, data_json);
 
                     Console.WriteLine("{0}: {1} 下载完成。", num + 1, jsonFile_name);
@@ -498,20 +503,22 @@ namespace table_OCRV41ForCsharp
             }
             if (situation == "1")
             {
-                string[] file_dir = Directory.GetFiles(folder_dir);
+                string[] file_dir = Directory.GetFiles(folderDir);
                 for (int i = 0; i < file_dir.Length; i++)
                 {
-                    result_dir.Add(file_dir[i]);
+                    resultDir.Add(file_dir[i]);
                 }
 
             }
             int fileNum = 0;
-            foreach (string jsonPath in result_dir)
+            foreach (string jsonPath in resultDir)
             {
                 fileNum++;
                 Console.WriteLine("-----------{0}-------------", fileNum);
                 // 把识别结果的json文档信息提取出来
-                jsonMessage = JsonMessage(jsonPath);
+                //jsonMessage = JsonMessage(jsonPath);
+                string json = File.ReadAllText(jsonPath);
+                resultForJsonMessage = ocrParser.Parse(json);
                 //根据模板，写入对应的word文档里面
                 //FileStream docFlieRec = new FileStream(workPath+"\\限速器测试记录模板2.docx",FileMode.OpenOrCreate,FileAccess.ReadWrite);
                 //FileStream docFlieRep = new FileStream(workPath+"\\限速器测试报告模板2.docx", FileMode.OpenOrCreate, FileAccess.ReadWrite);
@@ -522,7 +529,8 @@ namespace table_OCRV41ForCsharp
                 XWPFDocument documentRep = new XWPFDocument(docFlieRep);
 
                 IList<XWPFParagraph> paragraphsRec = documentRec.Paragraphs;
-                Console.WriteLine(paragraphsRec[0].ParagraphText + jsonMessage["reportNum2"].ToString());
+                Console.WriteLine(paragraphsRec[0].ParagraphText + resultForJsonMessage.ReportNum);
+                
 
 
                 IList<XWPFTable> tablesRec = documentRec.Tables;
@@ -530,7 +538,7 @@ namespace table_OCRV41ForCsharp
                 XWPFTable tableRec1 = tablesRec[1];
 
                 IList<XWPFParagraph> paragraphsRep = documentRep.Paragraphs;
-                Console.WriteLine(paragraphsRep[0].ParagraphText + jsonMessage["reportNum2"].ToString());
+                Console.WriteLine(paragraphsRep[0].ParagraphText + resultForJsonMessage.ReportNum);
 
                 IList<XWPFTable> tablesRep = documentRep.Tables;
                 XWPFTable tableRep0 = tablesRep[0];
@@ -541,7 +549,7 @@ namespace table_OCRV41ForCsharp
                 //写入记录for模板3
                 try
                 {
-                    tableRec1.GetRow(0).GetCell(1).SetText(jsonMessage["userName"]);
+                    tableRec1.GetRow(0).GetCell(1).SetText(resultForJsonMessage.UserName);
                     //左对齐
                     tableRec1.GetRow(0).GetCell(1).Paragraphs[0].Alignment = ParagraphAlignment.LEFT;
 
@@ -553,9 +561,10 @@ namespace table_OCRV41ForCsharp
 
                 try
                 {
-                    tableRec1.GetRow(1).GetCell(1).SetText(jsonMessage["userName"]);
+                    tableRec1.GetRow(1).GetCell(1).SetText(resultForJsonMessage.UserName);
                     //左对齐
                     tableRec1.GetRow(1).GetCell(1).Paragraphs[0].Alignment = ParagraphAlignment.LEFT;
+
                 }
                 catch
                 {
@@ -564,7 +573,7 @@ namespace table_OCRV41ForCsharp
 
                 try
                 {
-                    tableRec1.GetRow(2).GetCell(1).SetText(jsonMessage["deviceCode"]);
+                    tableRec1.GetRow(2).GetCell(1).SetText(resultForJsonMessage.DeviceCode);
                     //左对齐
                     tableRec1.GetRow(2).GetCell(1).Paragraphs[0].Alignment = ParagraphAlignment.LEFT;
                 }
@@ -575,7 +584,7 @@ namespace table_OCRV41ForCsharp
 
                 try
                 {
-                    tableRec1.GetRow(3).GetCell(1).SetText(jsonMessage["serialNum"]);
+                    tableRec1.GetRow(3).GetCell(1).SetText(resultForJsonMessage.SerialNum);
                     //左对齐
                     tableRec1.GetRow(3).GetCell(1).Paragraphs[0].Alignment = ParagraphAlignment.LEFT;
                 }
@@ -586,7 +595,7 @@ namespace table_OCRV41ForCsharp
 
                 try
                 {
-                    tableRec1.GetRow(4).GetCell(2).SetText(jsonMessage["xiansuqiModel"]);
+                    tableRec1.GetRow(4).GetCell(2).SetText(resultForJsonMessage.XiansuqiModel);
                     //左对齐
                     tableRec1.GetRow(4).GetCell(2).Paragraphs[0].Alignment = ParagraphAlignment.LEFT;
                 }
@@ -597,7 +606,7 @@ namespace table_OCRV41ForCsharp
 
                 try
                 {
-                    tableRec1.GetRow(4).GetCell(4).SetText(jsonMessage["xiansuqiNum"]);
+                    tableRec1.GetRow(4).GetCell(4).SetText(resultForJsonMessage.XiansuqiNum);
                     //左对齐
                     tableRec1.GetRow(4).GetCell(4).Paragraphs[0].Alignment = ParagraphAlignment.LEFT;
                 }
@@ -608,7 +617,7 @@ namespace table_OCRV41ForCsharp
 
                 try
                 {
-                    tableRec1.GetRow(5).GetCell(2).SetText(jsonMessage["speed"] + "m/s");
+                    tableRec1.GetRow(5).GetCell(2).SetText(resultForJsonMessage.Speed + "m/s");
                     //左对齐
                     tableRec1.GetRow(5).GetCell(2).Paragraphs[0].Alignment = ParagraphAlignment.LEFT;
                 }
@@ -619,7 +628,7 @@ namespace table_OCRV41ForCsharp
 
                 try
                 {
-                    tableRec1.GetRow(5).GetCell(4).SetText(jsonMessage["xiansuqiDirection"]);
+                    tableRec1.GetRow(5).GetCell(4).SetText(resultForJsonMessage.XiansuqiDirection);
                     //左对齐
                     tableRec1.GetRow(5).GetCell(4).Paragraphs[0].Alignment = ParagraphAlignment.LEFT;
                 }
@@ -630,18 +639,18 @@ namespace table_OCRV41ForCsharp
 
                 try
                 {
-                    tableRec1.GetRow(15).GetCell(1).SetText(jsonMessage["temperature"]);
+                    tableRec1.GetRow(15).GetCell(1).SetText(resultForJsonMessage.Temperature);
                     //左对齐
                     tableRec1.GetRow(15).GetCell(1).Paragraphs[0].Alignment = ParagraphAlignment.LEFT;
                 }
                 catch
                 {
-                    Console.WriteLine("direction write error");
+                    Console.WriteLine("temperature write error");
                 }
 
                 try
                 {
-                    tableRec1.GetRow(17).GetCell(1).SetText(jsonMessage["MaintenanceUnit"]);
+                    tableRec1.GetRow(17).GetCell(1).SetText(resultForJsonMessage.MaintenanceUnit);
                     //左对齐
                     tableRec1.GetRow(17).GetCell(1).Paragraphs[0].Alignment = ParagraphAlignment.LEFT;
                 }
@@ -652,7 +661,7 @@ namespace table_OCRV41ForCsharp
 
                 try
                 {
-                    tableRec1.GetRow(19).GetCell(3).SetText(jsonMessage["next_year"]);
+                    tableRec1.GetRow(19).GetCell(3).SetText(resultForJsonMessage.NextYear);
                     //右对齐
                     tableRec1.GetRow(19).GetCell(3).Paragraphs[0].Alignment = ParagraphAlignment.RIGHT;
                 }
@@ -663,7 +672,7 @@ namespace table_OCRV41ForCsharp
 
                 try
                 {
-                    tableRec1.GetRow(18).GetCell(3).Paragraphs[0].CreateRun().SetText(jsonMessage["date"]);
+                    tableRec1.GetRow(18).GetCell(3).Paragraphs[0].CreateRun().SetText(resultForJsonMessage.Date);
                     //右对齐
                     tableRec1.GetRow(18).GetCell(3).Paragraphs[0].Alignment = ParagraphAlignment.RIGHT;
 
@@ -675,16 +684,8 @@ namespace table_OCRV41ForCsharp
 
                 try
                 {
-                    if (jsonMessage["jianyanOrjiance"].Equals("检验"))
-                    {
-                        paragraphsRec[0].CreateRun().SetText("D");
-                    }
-                    else
-                    {
-                        paragraphsRec[0].CreateRun().SetText("E");
-                    }
-                    paragraphsRec[0].CreateRun().SetText(jsonMessage["reportNum2"]);
-
+                    paragraphsRec[0].CreateRun().SetText(resultForJsonMessage.JianyanOrjiance.Equals("检验") ? "D" : "E");
+                    paragraphsRec[0].CreateRun().SetText(resultForJsonMessage.ReportNum);
                 }
                 catch
                 {
@@ -693,9 +694,9 @@ namespace table_OCRV41ForCsharp
 
 
                 string outPath = string.Format(workPath + "\\{0}_{1}_{2}.doc",
-                                                    jsonMessage["deviceCode"],
+                                                    resultForJsonMessage.DeviceCode,
                                                     Path.GetFileNameWithoutExtension(jsonPath),
-                                                    jsonMessage["next_year_flag"]);
+                                                    resultForJsonMessage.NextYearFlag);
                 FileStream outFile = new FileStream(outPath, FileMode.OpenOrCreate, FileAccess.ReadWrite);
                 documentRec.Write(outFile);
                 outFile.Close();
@@ -709,7 +710,7 @@ namespace table_OCRV41ForCsharp
                 //写入报告模板3
                 try
                 {
-                    tableRep1.GetRow(0).GetCell(1).SetText(jsonMessage["userName"]);
+                    tableRep1.GetRow(0).GetCell(1).SetText(resultForJsonMessage.UserName);
                     //左对齐
                     tableRep1.GetRow(0).GetCell(1).Paragraphs[0].Alignment = ParagraphAlignment.LEFT;
                 }
@@ -720,7 +721,7 @@ namespace table_OCRV41ForCsharp
 
                 try
                 {
-                    tableRep1.GetRow(1).GetCell(1).SetText(jsonMessage["userName"]);
+                    tableRep1.GetRow(1).GetCell(1).SetText(resultForJsonMessage.UserName);
                     //左对齐
                     tableRep1.GetRow(1).GetCell(1).Paragraphs[0].Alignment = ParagraphAlignment.LEFT;
                 }
@@ -731,7 +732,7 @@ namespace table_OCRV41ForCsharp
 
                 try
                 {
-                    tableRep1.GetRow(2).GetCell(1).SetText(jsonMessage["deviceCode"]);
+                    tableRep1.GetRow(2).GetCell(1).SetText(resultForJsonMessage.DeviceCode);
                     //左对齐
                     tableRep1.GetRow(2).GetCell(1).Paragraphs[0].Alignment = ParagraphAlignment.LEFT;
                 }
@@ -742,7 +743,7 @@ namespace table_OCRV41ForCsharp
 
                 try
                 {
-                    tableRep1.GetRow(3).GetCell(1).SetText(jsonMessage["serialNum"]);
+                    tableRep1.GetRow(3).GetCell(1).SetText(resultForJsonMessage.SerialNum);
                     //左对齐
                     tableRep1.GetRow(3).GetCell(1).Paragraphs[0].Alignment = ParagraphAlignment.LEFT;
                 }
@@ -753,7 +754,7 @@ namespace table_OCRV41ForCsharp
 
                 try
                 {
-                    tableRep1.GetRow(4).GetCell(2).SetText(jsonMessage["xiansuqiModel"]);
+                    tableRep1.GetRow(4).GetCell(2).SetText(resultForJsonMessage.XiansuqiModel);
                     //左对齐
                     tableRep1.GetRow(4).GetCell(2).Paragraphs[0].Alignment = ParagraphAlignment.LEFT;
                 }
@@ -764,7 +765,7 @@ namespace table_OCRV41ForCsharp
 
                 try
                 {
-                    tableRep1.GetRow(4).GetCell(4).SetText(jsonMessage["xiansuqiNum"]);
+                    tableRep1.GetRow(4).GetCell(4).SetText(resultForJsonMessage.XiansuqiNum);
                     //左对齐
                     tableRep1.GetRow(4).GetCell(4).Paragraphs[0].Alignment = ParagraphAlignment.LEFT;
                 }
@@ -775,7 +776,7 @@ namespace table_OCRV41ForCsharp
 
                 try
                 {
-                    tableRep1.GetRow(5).GetCell(2).SetText(jsonMessage["speed"] + "m/s");
+                    tableRep1.GetRow(5).GetCell(2).SetText(resultForJsonMessage.Speed + "m/s");
                     //左对齐
                     tableRep1.GetRow(5).GetCell(2).Paragraphs[0].Alignment = ParagraphAlignment.LEFT;
                 }
@@ -786,7 +787,7 @@ namespace table_OCRV41ForCsharp
 
                 try
                 {
-                    tableRep1.GetRow(5).GetCell(4).SetText(jsonMessage["xiansuqiDirectionForReport"]);
+                    tableRep1.GetRow(5).GetCell(4).SetText(resultForJsonMessage.xiansuqiDirectionForReport);
                     //左对齐
                     tableRep1.GetRow(5).GetCell(4).Paragraphs[0].Alignment = ParagraphAlignment.LEFT;
                 }
@@ -799,7 +800,7 @@ namespace table_OCRV41ForCsharp
 
                 try
                 {
-                    tableRep1.GetRow(15).GetCell(1).SetText(jsonMessage["MaintenanceUnit"]);
+                    tableRep1.GetRow(15).GetCell(1).SetText(resultForJsonMessage.MaintenanceUnit);
                     //右对齐
                     tableRep1.GetRow(15).GetCell(1).Paragraphs[0].Alignment = ParagraphAlignment.LEFT;
                 }
@@ -810,7 +811,7 @@ namespace table_OCRV41ForCsharp
 
                 try
                 {
-                    tableRep1.GetRow(16).GetCell(3).SetText(jsonMessage["next_year"]);
+                    tableRep1.GetRow(16).GetCell(3).SetText(resultForJsonMessage.NextYear);
                     //右对齐
                     tableRep1.GetRow(16).GetCell(3).Paragraphs[0].Alignment = ParagraphAlignment.RIGHT;
                 }
@@ -821,11 +822,11 @@ namespace table_OCRV41ForCsharp
 
                 try
                 {
-                    tableRep1.GetRow(17).GetCell(0).Paragraphs[0].CreateRun().SetText(jsonMessage["date"]);
+                    tableRep1.GetRow(17).GetCell(0).Paragraphs[0].CreateRun().SetText(resultForJsonMessage.Date);
 
 
-                    tableRep1.GetRow(18).GetCell(0).Paragraphs[0].CreateRun().SetText(jsonMessage["shenhe_date"]);
-                    tableRep1.GetRow(19).GetCell(0).Paragraphs[0].CreateRun().SetText(jsonMessage["shenhe_date"]);
+                    tableRep1.GetRow(18).GetCell(0).Paragraphs[0].CreateRun().SetText(resultForJsonMessage.ShenheDate);
+                    tableRep1.GetRow(19).GetCell(0).Paragraphs[0].CreateRun().SetText(resultForJsonMessage.ShenheDate);
 
 
                     //左对齐
@@ -841,15 +842,8 @@ namespace table_OCRV41ForCsharp
 
                 try
                 {
-                    if (jsonMessage["jianyanOrjiance"].Equals("检验"))
-                    {
-                        paragraphsRep[0].CreateRun().SetText("D");
-                    }
-                    else
-                    {
-                        paragraphsRep[0].CreateRun().SetText("E");
-                    }
-                    paragraphsRep[0].CreateRun().SetText(jsonMessage["reportNum2"]);
+                    paragraphsRep[0].CreateRun().SetText(resultForJsonMessage.JianyanOrjiance.Equals("检验") ? "D" : "E");
+                    paragraphsRep[0].CreateRun().SetText(resultForJsonMessage.ReportNum);
                     //if (jsonMessage["xiansuqiDirectionForReport"] == "双向")
                     //{
                     //    paragraphsRep[0].CreateRun().SetText("D");
@@ -861,8 +855,7 @@ namespace table_OCRV41ForCsharp
                 }
 
 
-                string outPath2 = string.Format(workPath + "\\{0}.doc",
-                                                    jsonMessage["deviceCode"]);
+                string outPath2 = string.Format(workPath + "\\{0}.doc", resultForJsonMessage.DeviceCode);
                 FileStream outFile2 = new FileStream(outPath2, FileMode.OpenOrCreate, FileAccess.ReadWrite);
                 documentRep.Write(outFile2);
                 outFile2.Close();

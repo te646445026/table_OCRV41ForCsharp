@@ -1,6 +1,6 @@
 ﻿using Newtonsoft.Json;
 
-namespace table_OCRV41ForCsharp;
+namespace table_OCRV41ForCsharp_net;
 
 // 定义 API 密钥服务
 public class KeyService : IKeyService

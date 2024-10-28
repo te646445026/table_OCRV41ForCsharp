@@ -1,7 +1,7 @@
-﻿using Newtonsoft.Json.Linq;
-using System.Text.RegularExpressions;
+﻿using System.Text.RegularExpressions;
+using Newtonsoft.Json.Linq;
 
-namespace table_OCRV41ForCsharp;
+namespace table_OCRV41ForCsharp_net;
 
 public class TencentOcrParser:IOcrParser
 {

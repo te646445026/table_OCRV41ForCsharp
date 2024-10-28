@@ -2,7 +2,7 @@
 using System.Security.Cryptography;
 using System.Text;
 
-namespace table_OCRV41ForCsharp;
+namespace table_OCRV41ForCsharp_net;
 
 public class TencentOcrService : IOcrService
 {
