@@ -24,19 +24,19 @@ public class TencentOcrService : IOcrService
         _region = "ap-guangzhou";
     }
 
-    public async Task<string> RecognizeTableAsync(string imageBase64)
+    public string RecognizeTable(string imageBase64)
     {
         var body = imageBase64;
         var token = "";
-        var result = await DoRequest(_secretId, _secretKey, _service, _version, _action, body, _region, token);
+        var result =  DoRequest(_secretId, _secretKey, _service, _version, _action, body, _region, token);
         return result;
     }
 
-    private async Task<string> DoRequest(string secretId, string secretKey, string service, string version, string action, string body, string region, string token)
+    private string DoRequest(string secretId, string secretKey, string service, string version, string action, string body, string region, string token)
     {
         var request = BuildRequest(secretId, secretKey, service, version, action, body, region, token);
-        var response = await Client.SendAsync(request);
-        return await response.Content.ReadAsStringAsync();
+        var response = Client.Send(request);
+        return  response.Content.ReadAsStringAsync().Result;
     }
 
     private HttpRequestMessage BuildRequest(string secretId, string secretKey, string service, string version, string action, string body, string region, string token)

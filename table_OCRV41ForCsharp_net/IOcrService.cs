@@ -2,5 +2,5 @@
 
 public interface IOcrService
 {
-    Task<string> RecognizeTableAsync(string imageBase64);
+    string RecognizeTable(string imageBase64);
 }

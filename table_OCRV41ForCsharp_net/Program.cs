@@ -27,7 +27,7 @@ namespace table_OCRV41ForCsharp_net
             //await ProcessAsync(ocrService, pathService,getFileContentAsBase64Service);
             
             
-            ProcessAsync(serviceProvider);
+            Process(serviceProvider);
         }
         /**
         * 获取文件base64编码
@@ -424,7 +424,7 @@ namespace table_OCRV41ForCsharp_net
 
         }
 
-        private static async Task ProcessAsync( IServiceProvider serviceProvider)
+        private static void Process( IServiceProvider serviceProvider)
         {
             // 应用程序的主要逻辑
             // ...
@@ -489,7 +489,7 @@ namespace table_OCRV41ForCsharp_net
                 {
                     Console.WriteLine("{0}: {1} 正在处理：", num + 1, file.Name.Split('.')[0]);
                     string imageBase64 = getFileContentAsBase64Service.GetFileContentAsBase64(file.FullName);
-                    string data_json = await ocrService.RecognizeTableAsync(imageBase64);
+                    string data_json = ocrService.RecognizeTable(imageBase64);
                     string jsonFile_name = folderDir + file.Name.Split('.')[0] + ".json";
                     File.WriteAllText(jsonFile_name, data_json);
 
