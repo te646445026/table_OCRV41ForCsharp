@@ -56,13 +56,13 @@ public class TencentOcrParser:IOcrParser
             int indexj;
             int indexi;
             bool isContain;
-            ObjsIndex("型号", objs, out indexj, out indexi, out isContain);
+            ObjsIndex("产品型号", objs, out indexj, out indexi, out isContain);
             result.Model = objs["Response"]["TableDetections"][indexj]["Cells"][indexi + 1]["Text"].ToString().Replace("\n", "").Replace("\r", "");
-            Console.WriteLine("型号: " + result.Model);
+            Console.WriteLine("产品型号: " + result.Model);
         }
         catch
         {
-            Console.WriteLine("型号获取错误");
+            Console.WriteLine("产品型号获取错误");
             result.Model = "/";
         }
 
@@ -88,7 +88,7 @@ public class TencentOcrParser:IOcrParser
             int indexj;
             int indexi;
             bool isContain;
-            ObjsIndex("制造单位", objs, out indexj, out indexi, out isContain);
+            ObjsIndex("制造单位名称", objs, out indexj, out indexi, out isContain);
             result.ManufacturingUnit = objs["Response"]["TableDetections"][indexj]["Cells"][indexi + 1]["Text"].ToString().Replace("\n", "").Replace("\r", "");
             Console.WriteLine("制造单位: " + result.ManufacturingUnit);
         }
@@ -104,7 +104,7 @@ public class TencentOcrParser:IOcrParser
             int indexj;
             int indexi;
             bool isContain;
-            ObjsIndex("使用单位", objs, out indexj, out indexi, out isContain);
+            ObjsIndex("使用单位名称", objs, out indexj, out indexi, out isContain);
             result.UserName = objs["Response"]["TableDetections"][indexj]["Cells"][indexi + 1]["Text"].ToString().Replace("\n", "").Replace("\r", "");
             Console.WriteLine("使用单位: " + result.UserName);
         }
@@ -136,7 +136,7 @@ public class TencentOcrParser:IOcrParser
             int indexj;
             int indexi;
             bool isContain;
-            ObjsIndex("维护保养单位", objs, out indexj, out indexi, out isContain);
+            ObjsIndex("维护保养单位名称", objs, out indexj, out indexi, out isContain);
             result.MaintenanceUnit = objs["Response"]["TableDetections"][indexj]["Cells"][indexi + 1]["Text"].ToString().Replace("\n", "").Replace("\r", "");
             Console.WriteLine("维护保养单位: " + result.MaintenanceUnit);
         }
@@ -166,13 +166,21 @@ public class TencentOcrParser:IOcrParser
         }
         
         //string temperature;
+        string jianyanOrjianceTiaojian;
         try
         {
-
+            if (result.JianyanOrjiance.Equals("检验"))
+            {
+                jianyanOrjianceTiaojian = "检验条件";
+            }
+            else
+            {
+                jianyanOrjianceTiaojian = "检测条件";
+            }
             int indexj;
             int indexi;
             bool isContain;
-            ObjsIndex("条件", objs, out indexj, out indexi, out isContain);
+            ObjsIndex(jianyanOrjianceTiaojian, objs, out indexj, out indexi, out isContain);
             result.Temperature = objs["Response"]["TableDetections"][indexj]["Cells"][indexi + 1]["Text"].ToString().Replace("\n", "").Replace("\r", "");
             string temperature_pattern = @"\d{2,3}";
             MatchCollection temperatureNeed = Regex.Matches(result.Temperature, temperature_pattern);
@@ -181,15 +189,8 @@ public class TencentOcrParser:IOcrParser
         }
         catch
         {
-            int indexj;
-            int indexi;
-            bool isContain;
-            ObjsIndex("条件", objs, out indexj, out indexi, out isContain);
-            result.Temperature = objs["Response"]["TableDetections"][indexj]["Cells"][indexi + 1]["Text"].ToString().Replace("\n", "").Replace("\r", "");
-            string temperature2 = objs["Response"]["TableDetections"][indexj]["Cells"][indexi + 3]["Text"].ToString().Replace("\n", "").Replace("\r", "");
-            string temperature3 = objs["Response"]["TableDetections"][indexj]["Cells"][indexi + 5]["Text"].ToString().Replace("\n", "").Replace("\r", "");
-            result.Temperature = $"温度：{result.Temperature}℃，  湿度：{temperature2}％ ， 电压：{temperature3}V";
-            Console.WriteLine("温度、湿度、电压: " + result.Temperature);
+            Console.WriteLine("检验或检测条件获取错误");
+            result.Temperature = "温度：  ℃，湿度：  %，电压：  V";
         }
 
         //string reportNum;
@@ -341,19 +342,24 @@ public class TencentOcrParser:IOcrParser
         indexj = 0;
         isContain = false;
 
-        for (int j = 0; j < objs["Response"]["TableDetections"].Count(); j++)
-        {
-            for (int i = 0; i < objs["Response"]["TableDetections"][j]["Cells"].Count(); i++)
+        var tableDetections = objs["Response"]["TableDetections"];
+
+        var result = tableDetections
+            .Select((table, j) => new { Table = table, J = j })
+            .SelectMany(x => x.Table["Cells"]
+                .Select((cell, i) => new { Cell = cell, I = i, J = x.J }))
+            .FirstOrDefault(x =>
             {
-                var text = objs["Response"]["TableDetections"][j]["Cells"][i]["Text"];
-                isContain = text.ToString().Contains(str);
-                if (isContain)
-                {
-                    indexi = i;
-                    indexj = j;
-                    return;
-                }
-            }
+                string cellText = x.Cell["Text"].ToString();
+                // 使用正则表达式进行精确匹配
+                return Regex.IsMatch(cellText, @"\b" + Regex.Escape(str) + @"\b");
+            });
+
+        if (result != null)
+        {
+            indexi = result.I;
+            indexj = result.J;
+            isContain = true;
         }
     }
 }
