@@ -693,7 +693,7 @@ namespace table_OCRV41ForCsharp_net
                 }
 
 
-                string outPath = string.Format(workPath + "\\{0}_{1}_{2}.doc",
+                string outPath = string.Format(workPath + "\\{0}_{1}_{2}.docx",
                                                     resultForJsonMessage.DeviceCode,
                                                     Path.GetFileNameWithoutExtension(jsonPath),
                                                     resultForJsonMessage.NextYearFlag);
@@ -855,7 +855,7 @@ namespace table_OCRV41ForCsharp_net
                 }
 
 
-                string outPath2 = string.Format(workPath + "\\{0}.doc", resultForJsonMessage.DeviceCode);
+                string outPath2 = string.Format(workPath + "\\{0}.docx", resultForJsonMessage.DeviceCode);
                 FileStream outFile2 = new FileStream(outPath2, FileMode.OpenOrCreate, FileAccess.ReadWrite);
                 documentRep.Write(outFile2);
                 outFile2.Close();
