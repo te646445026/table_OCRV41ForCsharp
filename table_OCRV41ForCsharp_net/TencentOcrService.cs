@@ -24,19 +24,91 @@ public class TencentOcrService : IOcrService
         _region = "ap-guangzhou";
     }
 
+    /// <summary>
+    /// 识别表格
+    /// </summary>
+    /// <param name="imageBase64">Base64编码的图片数据</param>
+    /// <returns>OCR识别结果</returns>
+    /// <exception cref="OcrServiceException">OCR服务调用失败时抛出</exception>
     public string RecognizeTable(string imageBase64)
     {
-        var body = imageBase64;
-        var token = "";
-        var result =  DoRequest(_secretId, _secretKey, _service, _version, _action, body, _region, token);
-        return result;
+        try
+        {
+            var body = imageBase64;
+            var token = "";
+            
+            // 使用重试机制执行请求
+            int maxRetries = 3;
+            int retryCount = 0;
+            Exception lastException = null;
+            
+            while (retryCount < maxRetries)
+            {
+                try
+                {
+                    var result = DoRequest(_secretId, _secretKey, _service, _version, _action, body, _region, token);
+                    return result;
+                }
+                catch (Exception ex)
+                {
+                    lastException = ex;
+                    retryCount++;
+                    
+                    if (retryCount >= maxRetries)
+                        break;
+                        
+                    // 指数退避策略
+                    int delayMs = (int)Math.Pow(2, retryCount) * 1000;
+                    Thread.Sleep(delayMs);
+                }
+            }
+            
+            throw new OcrServiceException($"OCR服务调用失败，已重试{maxRetries}次", lastException);
+        }
+        catch (OcrServiceException)
+        {
+            throw; // 重新抛出OcrServiceException
+        }
+        catch (Exception ex)
+        {
+            throw new OcrServiceException("OCR服务调用过程中发生错误", ex);
+        }
     }
 
+    /// <summary>
+    /// 执行HTTP请求
+    /// </summary>
+    /// <exception cref="OcrServiceException">请求失败时抛出</exception>
     private string DoRequest(string secretId, string secretKey, string service, string version, string action, string body, string region, string token)
     {
-        var request = BuildRequest(secretId, secretKey, service, version, action, body, region, token);
-        var response = Client.Send(request);
-        return  response.Content.ReadAsStringAsync().Result;
+        try
+        {
+            var request = BuildRequest(secretId, secretKey, service, version, action, body, region, token);
+            var response = Client.Send(request);
+            
+            if (!response.IsSuccessStatusCode)
+            {
+                throw new OcrServiceException($"HTTP请求失败，状态码: {response.StatusCode}，原因: {response.ReasonPhrase}");
+            }
+            
+            return response.Content.ReadAsStringAsync().Result;
+        }
+        catch (OcrServiceException)
+        {
+            throw; // 重新抛出OcrServiceException
+        }
+        catch (HttpRequestException ex)
+        {
+            throw new OcrServiceException("HTTP请求异常", ex);
+        }
+        catch (TaskCanceledException ex)
+        {
+            throw new OcrServiceException("请求超时", ex);
+        }
+        catch (Exception ex)
+        {
+            throw new OcrServiceException("执行请求时发生未知错误", ex);
+        }
     }
 
     private HttpRequestMessage BuildRequest(string secretId, string secretKey, string service, string version, string action, string body, string region, string token)

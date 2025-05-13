@@ -1,13 +1,19 @@
-﻿using System.Collections;
+using System;
+using System.Collections;
+using System.IO;
+using System.Threading;
+using System.Threading.Tasks;
+using System.Windows.Forms;
 using Microsoft.Extensions.DependencyInjection;
 using NPOI.XWPF.UserModel;
 
 namespace table_OCRV41ForCsharp_net
 {
+    /// <summary>
+    /// 程序入口类
+    /// </summary>
     internal class Program
-
     {
-
         [STAThread]
         public static void Main(string[] args)
         {
@@ -15,394 +21,28 @@ namespace table_OCRV41ForCsharp_net
             ConfigureServices(serviceCollection);
 
             var serviceProvider = serviceCollection.BuildServiceProvider();
-
-            //var ocrService = serviceProvider.GetService<IOcrService>();
-            //var pathService = serviceProvider.GetService<IPathService>();
-            //var keyService = serviceProvider.GetService<IKeyService>();
-            //var getFileContentAsBase64Service = serviceProvider.GetService<IGetFileContentAsBase64Service>();
             
-            //var ocrService = serviceProvider.GetService<IOcrService>();
-            //var pathService = serviceProvider.GetService<IPathService>();
-            //var getFileContentAsBase64Service = serviceProvider.GetService<IGetFileContentAsBase64Service>();
-            //await ProcessAsync(ocrService, pathService,getFileContentAsBase64Service);
-            
-            
-            Process(serviceProvider);
-        }
-        /**
-        * 获取文件base64编码
-        * @param path 文件路径
-        * @return base64编码信息，不带文件头
-        */
-        
-
-        /*static void ObjsIndex(string str,JObject objs,out int indexj,out int indexi,out bool isContain)
-        {
-            
-            indexi = 0;
-            indexj = 0;
-            isContain = false;
-        
-            for (int j = 0; j < objs["Response"]["TableDetections"].Count(); j++)
+            // 运行HolidayService测试
+            if (args.Length > 0)
             {
-                for (int i = 0; i < objs["Response"]["TableDetections"][j]["Cells"].Count(); i++)
+                switch (args[0])
                 {
-                    var text = objs["Response"]["TableDetections"][j]["Cells"][i]["Text"];
-                    isContain = text.ToString().Contains(str);
-                    if (isContain)
-                    {
-                        indexi = i;
-                        indexj = j;
-                        return;
-                    }
-                }          
-            }
-        }*/
-
-        /*static Dictionary<string, string> JsonMessage(string filePath)
-        {
-            Dictionary<string, string> result = new Dictionary<string, string>();
-            string json = File.ReadAllText(filePath);
-            JObject? objs = JObject.Parse(json);
-        
-        
-            string jianyanOrjiance = "检测";
-            try
-            {
-                
-                int indexj;
-                int indexi;
-                bool isContain;
-                ObjsIndex("RTD", objs, out indexj, out indexi, out isContain);
-        
-                if (isContain)
-                {
-                    jianyanOrjiance = "检验";                   
+                    case "test-holiday":
+                        // 运行HolidayService测试
+                        HolidayServiceTest.RunAllTests().Wait();
+                        break;
+                    case "test-logger":
+                        // 运行Logger测试
+                        LoggerTest.RunLoggerTest();
+                        break;
                 }
-        
-        
-                Console.WriteLine("当前图片是: " + jianyanOrjiance);
-            }
-            catch
-            {
-                Console.WriteLine("获取检验还是检测失败,默认设置为检测" );
-        
-            }
-            
-            
-            
-            string deviceCode;
-            try
-            {
-                int indexj;
-                int indexi;
-                bool isContain;
-                ObjsIndex("设备代码", objs, out indexj, out indexi, out isContain);
-        
-                deviceCode = objs["Response"]["TableDetections"][indexj]["Cells"][indexi+1]["Text"].ToString().Replace("\n", "").Replace("\r", "");
-                
-                Console.WriteLine("设备代码: " + deviceCode);
-            }
-            catch
-            {
-                Console.WriteLine("设备代码获取错误");
-                deviceCode = "/";
-            }
-            string model;
-            try
-            {
-                int indexj;
-                int indexi;
-                bool isContain;
-                ObjsIndex("型号", objs, out indexj, out indexi, out isContain);
-                model = objs["Response"]["TableDetections"][indexj]["Cells"][indexi+1]["Text"].ToString().Replace("\n", "").Replace("\r", "");
-                Console.WriteLine("型号: " + model);
-            }
-            catch
-            {
-                Console.WriteLine("型号获取错误");
-                model = "/";
-            }
-            string serialNum;
-            try
-            {
-                int indexj;
-                int indexi;
-                bool isContain;
-                ObjsIndex("产品编号", objs, out indexj, out indexi, out isContain);
-                serialNum = objs["Response"]["TableDetections"][indexj]["Cells"][indexi+1]["Text"].ToString().Replace("\n", "").Replace("\r", "");
-                Console.WriteLine("产品编号: " + serialNum);
-            }
-            catch
-            {
-                Console.WriteLine("产品编号获取错误");
-                serialNum = "/";
-            }
-            string ManufacturingUnit;
-            try
-            {
-                int indexj;
-                int indexi;
-                bool isContain;
-                ObjsIndex("制造单位", objs, out indexj, out indexi, out isContain);
-                ManufacturingUnit = objs["Response"]["TableDetections"][indexj]["Cells"][indexi+1]["Text"].ToString().Replace("\n", "").Replace("\r", "");
-                Console.WriteLine("制造单位: " + ManufacturingUnit);
-            }
-            catch
-            {
-                Console.WriteLine("制造单位获取错误");
-                ManufacturingUnit = "/";
-            }
-            string userName;
-            try
-            {
-                int indexj;
-                int indexi;
-                bool isContain;
-                ObjsIndex("使用单位", objs, out indexj, out indexi, out isContain);
-                userName = objs["Response"]["TableDetections"][indexj]["Cells"][indexi+1]["Text"].ToString().Replace("\n", "").Replace("\r", "");
-                Console.WriteLine("使用单位: " + userName);
-            }
-            catch
-            {
-                Console.WriteLine("使用单位获取错误");
-                userName = "/";
-            }
-            string UsingAddress;
-            try
-            {
-                int indexj;
-                int indexi;
-                bool isContain;
-                ObjsIndex("安装地点", objs, out indexj, out indexi, out isContain);
-                UsingAddress = objs["Response"]["TableDetections"][indexj]["Cells"][indexi+1]["Text"].ToString().Replace("\n", "").Replace("\r", "");
-                Console.WriteLine("安装地点: " + UsingAddress);
-            }
-            catch
-            {
-                Console.WriteLine("安装地点获取错误");
-                UsingAddress = "/";
-            }
-            string MaintenanceUnit;
-            try
-            {
-                int indexj;
-                int indexi;
-                bool isContain;
-                ObjsIndex("维护保养单位", objs, out indexj, out indexi, out isContain);
-                MaintenanceUnit = objs["Response"]["TableDetections"][indexj]["Cells"][indexi+1]["Text"].ToString().Replace("\n", "").Replace("\r", "");
-                Console.WriteLine("维护保养单位: " + MaintenanceUnit);
-            }
-            catch
-            {
-                Console.WriteLine("维护保养单位获取错误");
-                MaintenanceUnit = "/";
-            }
-            string speed;
-            try
-            {
-                int indexj;
-                int indexi;
-                bool isContain;
-                ObjsIndex("额定速度", objs, out indexj, out indexi, out isContain);
-                speed = objs["Response"]["TableDetections"][indexj]["Cells"][indexi+1]["Text"].ToString().Replace("\n", "");
-                string speed_pattern = @"(\d+(\.\d+)?)";
-                var speedNeed = Regex.Matches(speed, speed_pattern);
-                speed = speedNeed[0].ToString();
-                Console.WriteLine("速度：" + speed);
-            }
-            catch
-            {
-                Console.WriteLine("速度获取错误");
-                speed = "/";
-            }
-            string temperature;
-            try
-            {
-                
-                int indexj;
-                int indexi;
-                bool isContain;
-                ObjsIndex("条件", objs, out indexj, out indexi, out isContain);
-                temperature = objs["Response"]["TableDetections"][indexj]["Cells"][indexi+1]["Text"].ToString().Replace("\n", "").Replace("\r", "");
-                string temperature_pattern = @"\d{2,3}";
-                MatchCollection temperatureNeed = Regex.Matches(temperature, temperature_pattern);
-                temperature = $"温度：{temperatureNeed[0].ToString()}℃，  湿度：{temperatureNeed[1].ToString()}％ ， 电压：{temperatureNeed[2].ToString()}V";
-                Console.WriteLine("温度、湿度、电压: " + temperature);
-            }
-            catch
-            {
-                int indexj;
-                int indexi;
-                bool isContain;
-                ObjsIndex("条件", objs, out indexj, out indexi, out isContain);
-                temperature = objs["Response"]["TableDetections"][indexj]["Cells"][indexi + 1]["Text"].ToString().Replace("\n", "").Replace("\r", "");
-                string temperature2 = objs["Response"]["TableDetections"][indexj]["Cells"][indexi + 3]["Text"].ToString().Replace("\n", "").Replace("\r", "");
-                string temperature3 = objs["Response"]["TableDetections"][indexj]["Cells"][indexi + 5]["Text"].ToString().Replace("\n", "").Replace("\r", "");
-                temperature = $"温度：{temperature}℃，  湿度：{temperature2}％ ， 电压：{temperature3}V";
-                Console.WriteLine("温度、湿度、电压: " + temperature);
-            }
-        
-            string reportNum;
-            string reportNum2;
-            string jianyanOrjianceReportNum;
-            try
-            {
-                if (jianyanOrjiance.Equals("检验"))
-                {
-                    jianyanOrjianceReportNum = "RTD";
-                }
-                else
-                {
-                    jianyanOrjianceReportNum = "RTC";
-                }
-                int indexj;
-                int indexi;
-                bool isContain;
-                ObjsIndex(jianyanOrjianceReportNum, objs, out indexj, out indexi, out isContain);
-        
-                reportNum = objs["Response"]["TableDetections"][indexj]["Cells"][indexi]["Text"].ToString();
-                //MatchCollection matchs = Regex.Matches(reportNum, @"^\d{8}");
-                //reportNum2 = matchs[0].ToString().Substring(1,7);
-                reportNum2 = reportNum.Substring(reportNum.Length - 7);
-                Console.WriteLine("报告编号: " + reportNum2);
-        
-            }
-            catch
-            {
-                Console.WriteLine("报告编号获取错误");
-                reportNum = "/";
-                reportNum2 = "/";
-            }
-            string? date;
-            string next_year;
-            string next_year_flag;
-            string shenhe_date;
-            string jianyanOrjianceDate;
-            try
-            {
-                if (jianyanOrjiance.Equals("检验"))
-                {
-                    jianyanOrjianceDate = "检验日期";
-                }
-                else
-                {
-                    jianyanOrjianceDate = "检测日期";
-                }
-        
-                int indexj;
-                int indexi;
-                bool isContain;
-                ObjsIndex(jianyanOrjianceDate, objs, out indexj, out indexi, out isContain);
-                date = objs["Response"]["TableDetections"][indexj]["Cells"][indexi]["Text"].ToString().Replace("\n", "").Replace("\r", "");
-                string date_or_month_pattern = @"\d{4}年\d{1,2}[\u4e00-\u9fa5]\d{0,}日|\d{4}年\d{1,2}[\u4e00-\u9fa5]";
-                MatchCollection dateNeed = Regex.Matches(date, date_or_month_pattern);
-                if (dateNeed != null)
-                {
-                    date = dateNeed[dateNeed.Count()-1].Value;
-                    string date_or_month_pattern2 = @"\d+";
-                    MatchCollection matches = Regex.Matches(date, date_or_month_pattern2);
-                    int year = int.Parse(matches[0].Value);
-                    int month = int.Parse(matches[1].Value);
-                    int day = int.Parse(matches[2].Value);
-                    date = matches[0].Value + "年" + matches[1].Value + "月" + matches[2].Value + "日";
-                    Console.WriteLine("检验时间为："+date);
-                    DateTime dateforcell = new DateTime(year, month, day);
-                    //计算2年后的日期
-                    string? nextdate;
-                    Console.WriteLine("请输入下次检验日期间隔，1代表1年，2代表2年: ");
-                    nextdate = Console.ReadLine();
-                    while (nextdate != "1" & nextdate != "2")
-                    {
-                        Console.WriteLine("请输入下次检验日期间隔，1代表1年，2代表2年: ");
-                        nextdate = Console.ReadLine();
-                    }
-        
-                    DateTime next_year_date = dateforcell.AddYears(int.Parse(nextdate));
-                    next_year = next_year_date.ToString("yyyy年MM月dd日");
-                    next_year_flag = "";
-                    //计算审核校准日期
-                    DateTime shenhe_dateforcell = dateforcell.AddDays(1);
-                    shenhe_date = shenhe_dateforcell.ToString("yyyy年MM月dd日");
-                }
-                else
-                {
-                    date = "   年   月   日";
-                    next_year = "   年   月   日";
-                    next_year_flag = "检验日期和下检日期出错";
-                    shenhe_date = "   年   月   日";
-                    Console.WriteLine("检验日期获取错误");
-                }               
-            }
-            catch
-            {
-                Console.WriteLine("检验日期获取错误");
-                date = "   年   月   日";
-                next_year = "   年   月   日";
-                next_year_flag = "检验日期和下检日期出错";
-                shenhe_date = "   年   月   日";
-            }
-                                 
-            string xiansuqiModel;
-            try
-            {
-                Console.WriteLine("输入限速器型号：");
-                xiansuqiModel = Console.ReadLine();
-                Console.WriteLine("限速器型号：" + xiansuqiModel);
-            }
-            catch
-            {
-                Console.WriteLine("限速器型号获取错误");
-                xiansuqiModel = "/";
-            }
-            string xiansuqiNum;
-            try
-            {
-                Console.WriteLine("输入限速器编号：");
-                xiansuqiNum = Console.ReadLine();
-                Console.WriteLine("限速器编号：" + xiansuqiNum);
-            }
-            catch
-            {
-                Console.WriteLine("限速器编号获取错误");
-                xiansuqiNum = "/";
-            }
-            string xiansuqiDirection;
-            string xiansuqiDirectionForReport;
-            Console.WriteLine("输入单向还是双向，0为单向，1为双向");
-            if (Console.ReadLine() == "0")
-            {
-                xiansuqiDirection = "☑  单向 ☐  双向";
-                xiansuqiDirectionForReport = "单向";
             }
             else
             {
-                xiansuqiDirection = "☐  单向 ☑  双向";
-                xiansuqiDirectionForReport = "双向";
+                // 运行正常的处理流程
+                Process(serviceProvider);
             }
-        
-            result.Add("userName", userName);
-            result.Add("MaintenanceUnit", MaintenanceUnit);
-            result.Add("ManufacturingUnit", ManufacturingUnit);
-            result.Add("UsingAddress", UsingAddress);
-            result.Add("deviceCode", deviceCode);
-            result.Add("model", model);
-            result.Add("serialNum", serialNum);
-            result.Add("speed", speed);
-            result.Add("xiansuqiModel", xiansuqiModel);
-            result.Add("xiansuqiNum", xiansuqiNum);
-            result.Add("reportNum2", reportNum2);
-            result.Add("date", date);
-            result.Add("next_year", next_year);
-            result.Add("xiansuqiDirection", xiansuqiDirection);
-            result.Add("xiansuqiDirectionForReport", xiansuqiDirectionForReport);
-            result.Add("next_year_flag", next_year_flag);
-            result.Add("shenhe_date", shenhe_date);
-            result.Add("temperature", temperature);
-            result.Add("jianyanOrjiance", jianyanOrjiance);
-        
-            return result;
-        }*/
+        }
 
         private static void ConfigureServices(IServiceCollection services)
         {
@@ -424,451 +64,606 @@ namespace table_OCRV41ForCsharp_net
 
         }
 
-        private static void Process( IServiceProvider serviceProvider)
+        /// <summary>
+        /// 初始化全局异常处理
+        /// </summary>
+        private static void InitializeExceptionHandler()
         {
-            // 应用程序的主要逻辑
-            // ...
-            //KEY myKey = new KEY();
-            //myKey = keyService.CheckKey();
-
-            string? workPath;
-            string dataDir = "";
-            string folderDir = "";
+            AppDomain.CurrentDomain.UnhandledException += (sender, args) =>
+            {
+                LogUnhandledException((Exception)args.ExceptionObject);
+                MessageBox.Show("程序遇到了未处理的异常，请查看日志文件获取详细信息。", "错误", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            };
+        }
+        
+        /// <summary>
+        /// 记录未处理的异常
+        /// </summary>
+        /// <param name="ex">异常对象</param>
+        private static void LogUnhandledException(Exception ex)
+        {
+            string logPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "error.log");
+            File.AppendAllText(logPath, $"[{DateTime.Now}] {ex.GetType().Name}: {ex.Message}\r\n{ex.StackTrace}\r\n\r\n");
+        }
+        
+        /// <summary>
+        /// 使用重试机制执行操作
+        /// </summary>
+        /// <typeparam name="T">返回值类型</typeparam>
+        /// <param name="operation">要执行的操作</param>
+        /// <param name="maxRetries">最大重试次数</param>
+        /// <returns>操作结果</returns>
+        private static async Task<T> ExecuteWithRetryAsync<T>(Func<Task<T>> operation, int maxRetries = 3)
+        {
+            int retryCount = 0;
+            Exception lastException = null;
             
-            var ocrService = serviceProvider.GetService<IOcrService>();
-            var pathService = serviceProvider.GetService<IPathService>();
-            var getFileContentAsBase64Service = serviceProvider.GetService<IGetFileContentAsBase64Service>();
-            var ocrParser = serviceProvider.GetService<IOcrParser>();
-
-            ArrayList resultDir = new ArrayList();
-           // Dictionary<string, string> jsonMessage = new Dictionary<string, string>();
-            OcrResult resultForJsonMessage = new OcrResult();
-
-            PathMessage path = pathService.CheckDefaultPath();
-            workPath = path.FolderPath;
-
-
-            Console.WriteLine("已生成识别结果请按0，未生成请按1：");
-            string? situation = Console.ReadLine();
-
-            if (situation == "1")
+            while (retryCount < maxRetries)
             {
-                //从json文件中读取
-
-                dataDir = path.DataFilePath + "\\";
-
-                folderDir = path.DataJsonFilePath + "\\";
-
-
-            }
-            else
-            {
-                // 创建 OpenFileDialog 对象
-                OpenFileDialog fileDialog = new OpenFileDialog();
-
-                // 设置对话框的属性
-                fileDialog.Multiselect = true; // 允许多选文件
-                fileDialog.Title = "请选择文件"; // 设置对话框的标题
-                fileDialog.Filter = "json文件(*.json)|*.json"; // 设置对话框的文件过滤器
-
-                // 显示对话框并获取用户选择的文件路径
-                DialogResult result = fileDialog.ShowDialog();
-                if (result == DialogResult.OK)
+                try
                 {
-                    foreach (string fileName in fileDialog.FileNames)
+                    return await operation();
+                }
+                catch (Exception ex)
+                {
+                    lastException = ex;
+                    retryCount++;
+                    
+                    if (retryCount >= maxRetries)
+                        break;
+                        
+                    // 指数退避策略
+                    int delayMs = (int)Math.Pow(2, retryCount) * 1000;
+                    await Task.Delay(delayMs);
+                }
+            }
+            
+            throw new Exception($"操作失败，已重试{maxRetries}次", lastException);
+        }
+
+        /// <summary>
+        /// 主处理流程
+        /// </summary>
+        /// <param name="serviceProvider">服务提供者</param>
+        private static void Process(IServiceProvider serviceProvider)
+        {
+            // 初始化异常处理
+            InitializeExceptionHandler();
+            
+            // 初始化日志记录器
+            var logFilePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "app.log");
+            using var logger = new FileLogger(logFilePath);
+
+            try
+            {
+                logger.Log(LogLevel.Info, "应用程序启动");
+
+                string? workPath;
+                string dataDir = "";
+                string folderDir = "";
+
+                var ocrService = serviceProvider.GetService<IOcrService>();
+                var pathService = serviceProvider.GetService<IPathService>();
+                var getFileContentAsBase64Service = serviceProvider.GetService<IGetFileContentAsBase64Service>();
+                var ocrParser = serviceProvider.GetService<IOcrParser>();
+
+                if (ocrService == null || pathService == null || getFileContentAsBase64Service == null || ocrParser == null)
+                {
+                    throw new Exception("无法解析所需的服务");
+                }
+
+                ArrayList resultDir = new ArrayList();
+                OcrResult resultForJsonMessage = new OcrResult();
+
+                try
+                {
+                    logger.Log(LogLevel.Info, "检查默认路径");
+                    PathMessage path = pathService.CheckDefaultPath();
+                    workPath = path.FolderPath;
+                    logger.Log(LogLevel.Info, $"工作路径: {workPath}");
+
+                    Console.WriteLine("已生成识别结果请按0，未生成请按1：");
+                    string? situation = Console.ReadLine();
+                    logger.Log(LogLevel.Info, $"用户选择: {situation}");
+
+                    if (situation == "1")
                     {
-                        resultDir.Add(fileName); // 获取用户选择的多个文件名的数组                                                              // 处理用户选择的文件路径
+                        //从json文件中读取
+                        logger.Log(LogLevel.Info, "从JSON文件中读取数据");
+                        dataDir = path.DataFilePath + "\\";
+                        folderDir = path.DataJsonFilePath + "\\";
+
+                        logger.Log(LogLevel.Info, $"数据目录: {dataDir}");
+                        logger.Log(LogLevel.Info, $"JSON文件目录: {folderDir}");
                     }
+                    else
+                    {
+                        try
+                        {
+                            logger.Log(LogLevel.Info, "打开文件选择对话框");
+                            // 创建 OpenFileDialog 对象
+                            OpenFileDialog fileDialog = new OpenFileDialog();
+
+                            // 设置对话框的属性
+                            fileDialog.Multiselect = true; // 允许多选文件
+                            fileDialog.Title = "请选择文件"; // 设置对话框的标题
+                            fileDialog.Filter = "json文件(*.json)|*.json"; // 设置对话框的文件过滤器
+
+                            // 显示对话框并获取用户选择的文件路径
+                            DialogResult result = fileDialog.ShowDialog();
+                            if (result == DialogResult.OK)
+                            {
+                                foreach (string fileName in fileDialog.FileNames)
+                                {
+                                    resultDir.Add(fileName); // 获取用户选择的多个文件名的数组
+                                    logger.Log(LogLevel.Info, $"选择文件: {fileName}");
+                                }
+                            }
+                            else
+                            {
+                                logger.Log(LogLevel.Warning, "用户取消了文件选择");
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            logger.Log(LogLevel.Error, "打开文件选择对话框时出错", ex);
+                            MessageBox.Show($"选择文件时出错: {ex.Message}", "错误", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        }
+                    }
+
+                    if (situation == "1")
+                    {
+                        try
+                        {
+                            logger.Log(LogLevel.Info, "开始处理图片文件");
+                            int num = 0;
+                            DirectoryInfo directoryInfo = new DirectoryInfo(dataDir);
+
+                            if (!directoryInfo.Exists)
+                            {
+                                throw new DirectoryNotFoundException($"目录不存在: {dataDir}");
+                            }
+
+                            foreach (FileInfo file in directoryInfo.GetFiles())
+                            {
+                                try
+                                {
+                                    logger.Log(LogLevel.Info, $"处理文件: {file.Name}");
+                                    Console.WriteLine("{0}: {1} 正在处理：", num + 1, file.Name.Split('.')[0]);
+
+                                    string imageBase64 = getFileContentAsBase64Service.GetFileContentAsBase64(file.FullName);
+                                    string data_json = ocrService.RecognizeTable(imageBase64);
+                                    string jsonFile_name = folderDir + file.Name.Split('.')[0] + ".json";
+
+                                    File.WriteAllText(jsonFile_name, data_json);
+                                    logger.Log(LogLevel.Info, $"文件处理完成: {jsonFile_name}");
+
+                                    Console.WriteLine("{0}: {1} 下载完成。", num + 1, jsonFile_name);
+                                    num++;
+                                    Console.WriteLine("--------------------------------------");
+                                    Console.WriteLine("");
+                                    Thread.Sleep(1000);
+                                }
+                                catch (Exception ex)
+                                {
+                                    logger.Log(LogLevel.Error, $"处理文件 {file.Name} 时出错", ex);
+                                    Console.WriteLine($"处理文件 {file.Name} 时出错: {ex.Message}");
+                                }
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            logger.Log(LogLevel.Error, "处理图片文件时出错", ex);
+                            MessageBox.Show($"处理图片文件时出错: {ex.Message}", "错误", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        }
+                    }
+
+                    if (situation == "1")
+                    {
+                        try
+                        {
+                            logger.Log(LogLevel.Info, $"从目录加载JSON文件: {folderDir}");
+                            string[] file_dir = Directory.GetFiles(folderDir);
+                            for (int i = 0; i < file_dir.Length; i++)
+                            {
+                                resultDir.Add(file_dir[i]);
+                                logger.Log(LogLevel.Info, $"添加JSON文件: {file_dir[i]}");
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            logger.Log(LogLevel.Error, "加载JSON文件时出错", ex);
+                            MessageBox.Show($"加载JSON文件时出错: {ex.Message}", "错误", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        }
+                    }
+                    int fileNum = 0;
+                    logger.Log(LogLevel.Info, $"开始处理JSON文件，共 {resultDir.Count} 个文件");
+
+                    foreach (string jsonPath in resultDir)
+                    {
+                        try
+                        {
+                            fileNum++;
+                            logger.Log(LogLevel.Info, $"处理JSON文件 {fileNum}/{resultDir.Count}: {jsonPath}");
+                            Console.WriteLine("-----------{0}-------------", fileNum);
+
+                            // 把识别结果的json文档信息提取出来
+                            string json = File.ReadAllText(jsonPath);
+                            resultForJsonMessage = ocrParser.Parse(json);
+                            logger.Log(LogLevel.Info, $"成功解析JSON文件: {Path.GetFileName(jsonPath)}");
+
+                            // 根据模板，写入对应的word文档里面
+                            string recordTemplatePath = workPath + "\\限速器测试记录模板3.docx";
+                            string reportTemplatePath = workPath + "\\限速器测试报告模板3.docx";
+
+                            if (!File.Exists(recordTemplatePath) || !File.Exists(reportTemplatePath))
+                            {
+                                throw new FileNotFoundException("模板文件不存在", !File.Exists(recordTemplatePath) ? recordTemplatePath : reportTemplatePath);
+                            }
+
+                            logger.Log(LogLevel.Info, "打开Word模板文件");
+                            FileStream docFlieRec = new FileStream(recordTemplatePath, FileMode.OpenOrCreate, FileAccess.ReadWrite);
+                            FileStream docFlieRep = new FileStream(reportTemplatePath, FileMode.OpenOrCreate, FileAccess.ReadWrite);
+
+                            XWPFDocument documentRec = new XWPFDocument(docFlieRec);
+                            XWPFDocument documentRep = new XWPFDocument(docFlieRep);
+
+                            IList<XWPFParagraph> paragraphsRec = documentRec.Paragraphs;
+                            Console.WriteLine(paragraphsRec[0].ParagraphText + resultForJsonMessage.ReportNum);
+
+                            IList<XWPFTable> tablesRec = documentRec.Tables;
+                            XWPFTable tableRec0 = tablesRec[0];
+                            XWPFTable tableRec1 = tablesRec[1];
+
+                            IList<XWPFParagraph> paragraphsRep = documentRep.Paragraphs;
+                            Console.WriteLine(paragraphsRep[0].ParagraphText + resultForJsonMessage.ReportNum);
+
+                            IList<XWPFTable> tablesRep = documentRep.Tables;
+                            XWPFTable tableRep0 = tablesRep[0];
+                            XWPFTable tableRep1 = tablesRep[1];
+
+                            logger.Log(LogLevel.Info, "开始填充Word文档内容");
+
+                            //写入记录for模板3
+                            try
+                            {
+                                tableRec1.GetRow(0).GetCell(1).SetText(resultForJsonMessage.UserName);
+                                //左对齐
+                                tableRec1.GetRow(0).GetCell(1).Paragraphs[0].Alignment = ParagraphAlignment.LEFT;
+                            }
+                            catch (Exception ex)
+                            {
+                                logger.Log(LogLevel.Warning, "设置用户名时出错", ex);
+                                Console.WriteLine("userName write error");
+                            }
+
+                            try
+                            {
+                                tableRec1.GetRow(1).GetCell(1).SetText(resultForJsonMessage.UserName);
+                                //左对齐
+                                tableRec1.GetRow(1).GetCell(1).Paragraphs[0].Alignment = ParagraphAlignment.LEFT;
+                            }
+                            catch (Exception ex)
+                            {
+                                logger.Log(LogLevel.Warning, "设置用户名时出错", ex);
+                                Console.WriteLine("userName write error");
+                            }
+
+                            try
+                            {
+                                tableRec1.GetRow(2).GetCell(1).SetText(resultForJsonMessage.DeviceCode);
+                                //左对齐
+                                tableRec1.GetRow(2).GetCell(1).Paragraphs[0].Alignment = ParagraphAlignment.LEFT;
+                            }
+                            catch
+                            {
+                                Console.WriteLine("deviceCode write error");
+                            }
+
+                            try
+                            {
+                                tableRec1.GetRow(3).GetCell(1).SetText(resultForJsonMessage.SerialNum);
+                                //左对齐
+                                tableRec1.GetRow(3).GetCell(1).Paragraphs[0].Alignment = ParagraphAlignment.LEFT;
+                            }
+                            catch
+                            {
+                                Console.WriteLine("serialNum write error");
+                            }
+
+                            try
+                            {
+                                tableRec1.GetRow(4).GetCell(2).SetText(resultForJsonMessage.XiansuqiModel);
+                                //左对齐
+                                tableRec1.GetRow(4).GetCell(2).Paragraphs[0].Alignment = ParagraphAlignment.LEFT;
+                            }
+                            catch
+                            {
+                                Console.WriteLine("xiansuqiModel write error");
+                            }
+
+                            try
+                            {
+                                tableRec1.GetRow(4).GetCell(4).SetText(resultForJsonMessage.XiansuqiNum);
+                                //左对齐
+                                tableRec1.GetRow(4).GetCell(4).Paragraphs[0].Alignment = ParagraphAlignment.LEFT;
+                            }
+                            catch
+                            {
+                                Console.WriteLine("xiansuqiNum write error");
+                            }
+
+                            try
+                            {
+                                tableRec1.GetRow(5).GetCell(2).SetText(resultForJsonMessage.Speed + "m/s");
+                                //左对齐
+                                tableRec1.GetRow(5).GetCell(2).Paragraphs[0].Alignment = ParagraphAlignment.LEFT;
+                            }
+                            catch
+                            {
+                                Console.WriteLine("speed write error");
+                            }
+
+                            try
+                            {
+                                tableRec1.GetRow(5).GetCell(4).SetText(resultForJsonMessage.XiansuqiDirection);
+                                //左对齐
+                                tableRec1.GetRow(5).GetCell(4).Paragraphs[0].Alignment = ParagraphAlignment.LEFT;
+                            }
+                            catch
+                            {
+                                Console.WriteLine("direction write error");
+                            }
+
+                            try
+                            {
+                                tableRec1.GetRow(15).GetCell(1).SetText(resultForJsonMessage.Temperature);
+                                //左对齐
+                                tableRec1.GetRow(15).GetCell(1).Paragraphs[0].Alignment = ParagraphAlignment.LEFT;
+                            }
+                            catch
+                            {
+                                Console.WriteLine("temperature write error");
+                            }
+
+                            try
+                            {
+                                tableRec1.GetRow(17).GetCell(1).SetText(resultForJsonMessage.MaintenanceUnit);
+                                //左对齐
+                                tableRec1.GetRow(17).GetCell(1).Paragraphs[0].Alignment = ParagraphAlignment.LEFT;
+                            }
+                            catch
+                            {
+                                Console.WriteLine("MaintenanceUnit write error");
+                            }
+
+                            try
+                            {
+                                tableRec1.GetRow(19).GetCell(3).SetText(resultForJsonMessage.NextYear);
+                                //右对齐
+                                tableRec1.GetRow(19).GetCell(3).Paragraphs[0].Alignment = ParagraphAlignment.RIGHT;
+                            }
+                            catch
+                            {
+                                Console.WriteLine("nextYear write error");
+                            }
+
+                            try
+                            {
+                                tableRec1.GetRow(18).GetCell(3).Paragraphs[0].CreateRun().SetText(resultForJsonMessage.Date);
+                                //右对齐
+                                tableRec1.GetRow(18).GetCell(3).Paragraphs[0].Alignment = ParagraphAlignment.RIGHT;
+
+                            }
+                            catch
+                            {
+                                Console.WriteLine("date write error");
+                            }
+
+                            try
+                            {
+                                paragraphsRec[0].CreateRun().SetText(resultForJsonMessage.JianyanOrjiance.Equals("检验") ? "D" : "E");
+                                paragraphsRec[0].CreateRun().SetText(resultForJsonMessage.ReportNum);
+                            }
+                            catch
+                            {
+                                Console.WriteLine("reportNum2 write error");
+                            }
+
+
+                            string outPath = string.Format(workPath + "\\{0}_{1}_{2}.docx",
+                                                                resultForJsonMessage.DeviceCode,
+                                                                Path.GetFileNameWithoutExtension(jsonPath),
+                                                                resultForJsonMessage.NextYearFlag);
+                            FileStream outFile = new FileStream(outPath, FileMode.OpenOrCreate, FileAccess.ReadWrite);
+                            documentRec.Write(outFile);
+                            outFile.Close();
+                            documentRec.Close();
+                            docFlieRec.Close();
+
+                            Console.WriteLine("{0}打印记录完成", Path.GetFileNameWithoutExtension(jsonPath));
+                            Console.WriteLine("-------------------------------------------------------");
+                            Console.WriteLine("");
+
+                            //写入报告模板3
+                            try
+                            {
+                                tableRep1.GetRow(0).GetCell(1).SetText(resultForJsonMessage.UserName);
+                                //左对齐
+                                tableRep1.GetRow(0).GetCell(1).Paragraphs[0].Alignment = ParagraphAlignment.LEFT;
+                            }
+                            catch
+                            {
+                                Console.WriteLine("userName write error");
+                            }
+
+                            try
+                            {
+                                tableRep1.GetRow(1).GetCell(1).SetText(resultForJsonMessage.UserName);
+                                //左对齐
+                                tableRep1.GetRow(1).GetCell(1).Paragraphs[0].Alignment = ParagraphAlignment.LEFT;
+                            }
+                            catch
+                            {
+                                Console.WriteLine("userName write error");
+                            }
+
+                            try
+                            {
+                                tableRep1.GetRow(2).GetCell(1).SetText(resultForJsonMessage.DeviceCode);
+                                //左对齐
+                                tableRep1.GetRow(2).GetCell(1).Paragraphs[0].Alignment = ParagraphAlignment.LEFT;
+                            }
+                            catch
+                            {
+                                Console.WriteLine("deviceCode write error");
+                            }
+
+                            try
+                            {
+                                tableRep1.GetRow(3).GetCell(1).SetText(resultForJsonMessage.SerialNum);
+                                //左对齐
+                                tableRep1.GetRow(3).GetCell(1).Paragraphs[0].Alignment = ParagraphAlignment.LEFT;
+                            }
+                            catch
+                            {
+                                Console.WriteLine("serialNum write error");
+                            }
+
+                            try
+                            {
+                                tableRep1.GetRow(4).GetCell(2).SetText(resultForJsonMessage.XiansuqiModel);
+                                //左对齐
+                                tableRep1.GetRow(4).GetCell(2).Paragraphs[0].Alignment = ParagraphAlignment.LEFT;
+                            }
+                            catch
+                            {
+                                Console.WriteLine("xiansuqiModel write error");
+                            }
+
+                            try
+                            {
+                                tableRep1.GetRow(4).GetCell(4).SetText(resultForJsonMessage.XiansuqiNum);
+                                //左对齐
+                                tableRep1.GetRow(4).GetCell(4).Paragraphs[0].Alignment = ParagraphAlignment.LEFT;
+                            }
+                            catch
+                            {
+                                Console.WriteLine("xiansuqiNum write error");
+                            }
+
+                            try
+                            {
+                                tableRep1.GetRow(5).GetCell(2).SetText(resultForJsonMessage.Speed + "m/s");
+                                //左对齐
+                                tableRep1.GetRow(5).GetCell(2).Paragraphs[0].Alignment = ParagraphAlignment.LEFT;
+                            }
+                            catch
+                            {
+                                Console.WriteLine("speed write error");
+                            }
+
+                            try
+                            {
+                                tableRep1.GetRow(5).GetCell(4).SetText(resultForJsonMessage.xiansuqiDirectionForReport);
+                                //左对齐
+                                tableRep1.GetRow(5).GetCell(4).Paragraphs[0].Alignment = ParagraphAlignment.LEFT;
+                            }
+                            catch
+                            {
+                                Console.WriteLine("direction write error");
+                            }
+
+
+
+                            try
+                            {
+                                tableRep1.GetRow(15).GetCell(1).SetText(resultForJsonMessage.MaintenanceUnit);
+                                //右对齐
+                                tableRep1.GetRow(15).GetCell(1).Paragraphs[0].Alignment = ParagraphAlignment.LEFT;
+                            }
+                            catch
+                            {
+                                Console.WriteLine("MaintenanceUnit write error");
+                            }
+
+                            try
+                            {
+                                tableRep1.GetRow(16).GetCell(3).SetText(resultForJsonMessage.NextYear);
+                                //右对齐
+                                tableRep1.GetRow(16).GetCell(3).Paragraphs[0].Alignment = ParagraphAlignment.RIGHT;
+                            }
+                            catch
+                            {
+                                Console.WriteLine("nextYear write error");
+                            }
+
+                            try
+                            {
+                                tableRep1.GetRow(17).GetCell(0).Paragraphs[0].CreateRun().SetText(resultForJsonMessage.Date);
+
+
+                                tableRep1.GetRow(18).GetCell(0).Paragraphs[0].CreateRun().SetText(resultForJsonMessage.ShenheDate);
+                                tableRep1.GetRow(19).GetCell(0).Paragraphs[0].CreateRun().SetText(resultForJsonMessage.ShenheDate);
+
+
+                                //左对齐
+                                tableRep1.GetRow(17).GetCell(0).Paragraphs[0].Alignment = ParagraphAlignment.LEFT;
+                                tableRep1.GetRow(18).GetCell(0).Paragraphs[0].Alignment = ParagraphAlignment.LEFT;
+                                tableRep1.GetRow(19).GetCell(0).Paragraphs[0].Alignment = ParagraphAlignment.LEFT;
+
+                            }
+                            catch
+                            {
+                                Console.WriteLine("date write error");
+                            }
+
+                            try
+                            {
+                                paragraphsRep[0].CreateRun().SetText(resultForJsonMessage.JianyanOrjiance.Equals("检验") ? "D" : "E");
+                                paragraphsRep[0].CreateRun().SetText(resultForJsonMessage.ReportNum);
+                            }
+                            catch
+                            {
+                                Console.WriteLine("reportNum2 write error");
+                            }
+
+
+                            // 保存报告文件
+                            string outPath2 = string.Format(workPath + "\\{0}.docx", resultForJsonMessage.DeviceCode);
+                            logger.Log(LogLevel.Info, $"保存报告文件: {outPath2}");
+                            FileStream outFile2 = new FileStream(outPath2, FileMode.OpenOrCreate, FileAccess.ReadWrite);
+                            documentRep.Write(outFile2);
+                            outFile2.Close();
+                            documentRep.Close();
+                            docFlieRep.Close();
+
+                            Console.WriteLine("{0}打印报告完成", Path.GetFileNameWithoutExtension(jsonPath));
+                            Console.WriteLine("-------------------------------------------------------");
+                            Console.WriteLine("");
+                        }
+                        catch (Exception ex)
+                        {
+                            logger.Log(LogLevel.Error, $"处理JSON文件 {jsonPath} 时出错", ex);
+                            MessageBox.Show($"处理文件时出错: {ex.Message}", "错误", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        }
+                    }
+
+                    logger.Log(LogLevel.Info, "所有文件处理完成");
+                    Console.WriteLine("输入任意按钮退出");
+                    Console.ReadKey();
+                }
+                catch (Exception ex)
+                {
+                    logger.Log(LogLevel.Error, "程序执行过程中发生错误", ex);
+                    MessageBox.Show($"程序执行过程中发生错误: {ex.Message}", "错误", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
+                finally
+                {
+                    logger.Log(LogLevel.Info, "应用程序结束");
                 }
             }
-            if (situation == "1")
-            {
-                int num = 0;
-                DirectoryInfo directoryInfo = new DirectoryInfo(dataDir);
-                foreach (FileInfo file in directoryInfo.GetFiles())
-                {
-                    Console.WriteLine("{0}: {1} 正在处理：", num + 1, file.Name.Split('.')[0]);
-                    string imageBase64 = getFileContentAsBase64Service.GetFileContentAsBase64(file.FullName);
-                    string data_json = ocrService.RecognizeTable(imageBase64);
-                    string jsonFile_name = folderDir + file.Name.Split('.')[0] + ".json";
-                    File.WriteAllText(jsonFile_name, data_json);
-
-                    Console.WriteLine("{0}: {1} 下载完成。", num + 1, jsonFile_name);
-                    num++;
-                    Console.WriteLine("--------------------------------------");
-                    Console.WriteLine("");
-                    Thread.Sleep(1000);
-                }
-
-            }
-            if (situation == "1")
-            {
-                string[] file_dir = Directory.GetFiles(folderDir);
-                for (int i = 0; i < file_dir.Length; i++)
-                {
-                    resultDir.Add(file_dir[i]);
-                }
-
-            }
-            int fileNum = 0;
-            foreach (string jsonPath in resultDir)
-            {
-                fileNum++;
-                Console.WriteLine("-----------{0}-------------", fileNum);
-                // 把识别结果的json文档信息提取出来
-                //jsonMessage = JsonMessage(jsonPath);
-                string json = File.ReadAllText(jsonPath);
-                resultForJsonMessage = ocrParser.Parse(json);
-                //根据模板，写入对应的word文档里面
-                //FileStream docFlieRec = new FileStream(workPath+"\\限速器测试记录模板2.docx",FileMode.OpenOrCreate,FileAccess.ReadWrite);
-                //FileStream docFlieRep = new FileStream(workPath+"\\限速器测试报告模板2.docx", FileMode.OpenOrCreate, FileAccess.ReadWrite);
-                FileStream docFlieRec = new FileStream(workPath + "\\限速器测试记录模板3.docx", FileMode.OpenOrCreate, FileAccess.ReadWrite);
-                FileStream docFlieRep = new FileStream(workPath + "\\限速器测试报告模板3.docx", FileMode.OpenOrCreate, FileAccess.ReadWrite);
-
-                XWPFDocument documentRec = new XWPFDocument(docFlieRec);
-                XWPFDocument documentRep = new XWPFDocument(docFlieRep);
-
-                IList<XWPFParagraph> paragraphsRec = documentRec.Paragraphs;
-                Console.WriteLine(paragraphsRec[0].ParagraphText + resultForJsonMessage.ReportNum);
-                
-
-
-                IList<XWPFTable> tablesRec = documentRec.Tables;
-                XWPFTable tableRec0 = tablesRec[0];
-                XWPFTable tableRec1 = tablesRec[1];
-
-                IList<XWPFParagraph> paragraphsRep = documentRep.Paragraphs;
-                Console.WriteLine(paragraphsRep[0].ParagraphText + resultForJsonMessage.ReportNum);
-
-                IList<XWPFTable> tablesRep = documentRep.Tables;
-                XWPFTable tableRep0 = tablesRep[0];
-                XWPFTable tableRep1 = tablesRep[1];
-
-
-
-                //写入记录for模板3
-                try
-                {
-                    tableRec1.GetRow(0).GetCell(1).SetText(resultForJsonMessage.UserName);
-                    //左对齐
-                    tableRec1.GetRow(0).GetCell(1).Paragraphs[0].Alignment = ParagraphAlignment.LEFT;
-
-                }
-                catch
-                {
-                    Console.WriteLine("userName write error");
-                }
-
-                try
-                {
-                    tableRec1.GetRow(1).GetCell(1).SetText(resultForJsonMessage.UserName);
-                    //左对齐
-                    tableRec1.GetRow(1).GetCell(1).Paragraphs[0].Alignment = ParagraphAlignment.LEFT;
-
-                }
-                catch
-                {
-                    Console.WriteLine("userName write error");
-                }
-
-                try
-                {
-                    tableRec1.GetRow(2).GetCell(1).SetText(resultForJsonMessage.DeviceCode);
-                    //左对齐
-                    tableRec1.GetRow(2).GetCell(1).Paragraphs[0].Alignment = ParagraphAlignment.LEFT;
-                }
-                catch
-                {
-                    Console.WriteLine("deviceCode write error");
-                }
-
-                try
-                {
-                    tableRec1.GetRow(3).GetCell(1).SetText(resultForJsonMessage.SerialNum);
-                    //左对齐
-                    tableRec1.GetRow(3).GetCell(1).Paragraphs[0].Alignment = ParagraphAlignment.LEFT;
-                }
-                catch
-                {
-                    Console.WriteLine("serialNum write error");
-                }
-
-                try
-                {
-                    tableRec1.GetRow(4).GetCell(2).SetText(resultForJsonMessage.XiansuqiModel);
-                    //左对齐
-                    tableRec1.GetRow(4).GetCell(2).Paragraphs[0].Alignment = ParagraphAlignment.LEFT;
-                }
-                catch
-                {
-                    Console.WriteLine("xiansuqiModel write error");
-                }
-
-                try
-                {
-                    tableRec1.GetRow(4).GetCell(4).SetText(resultForJsonMessage.XiansuqiNum);
-                    //左对齐
-                    tableRec1.GetRow(4).GetCell(4).Paragraphs[0].Alignment = ParagraphAlignment.LEFT;
-                }
-                catch
-                {
-                    Console.WriteLine("xiansuqiNum write error");
-                }
-
-                try
-                {
-                    tableRec1.GetRow(5).GetCell(2).SetText(resultForJsonMessage.Speed + "m/s");
-                    //左对齐
-                    tableRec1.GetRow(5).GetCell(2).Paragraphs[0].Alignment = ParagraphAlignment.LEFT;
-                }
-                catch
-                {
-                    Console.WriteLine("speed write error");
-                }
-
-                try
-                {
-                    tableRec1.GetRow(5).GetCell(4).SetText(resultForJsonMessage.XiansuqiDirection);
-                    //左对齐
-                    tableRec1.GetRow(5).GetCell(4).Paragraphs[0].Alignment = ParagraphAlignment.LEFT;
-                }
-                catch
-                {
-                    Console.WriteLine("direction write error");
-                }
-
-                try
-                {
-                    tableRec1.GetRow(15).GetCell(1).SetText(resultForJsonMessage.Temperature);
-                    //左对齐
-                    tableRec1.GetRow(15).GetCell(1).Paragraphs[0].Alignment = ParagraphAlignment.LEFT;
-                }
-                catch
-                {
-                    Console.WriteLine("temperature write error");
-                }
-
-                try
-                {
-                    tableRec1.GetRow(17).GetCell(1).SetText(resultForJsonMessage.MaintenanceUnit);
-                    //左对齐
-                    tableRec1.GetRow(17).GetCell(1).Paragraphs[0].Alignment = ParagraphAlignment.LEFT;
-                }
-                catch
-                {
-                    Console.WriteLine("MaintenanceUnit write error");
-                }
-
-                try
-                {
-                    tableRec1.GetRow(19).GetCell(3).SetText(resultForJsonMessage.NextYear);
-                    //右对齐
-                    tableRec1.GetRow(19).GetCell(3).Paragraphs[0].Alignment = ParagraphAlignment.RIGHT;
-                }
-                catch
-                {
-                    Console.WriteLine("nextYear write error");
-                }
-
-                try
-                {
-                    tableRec1.GetRow(18).GetCell(3).Paragraphs[0].CreateRun().SetText(resultForJsonMessage.Date);
-                    //右对齐
-                    tableRec1.GetRow(18).GetCell(3).Paragraphs[0].Alignment = ParagraphAlignment.RIGHT;
-
-                }
-                catch
-                {
-                    Console.WriteLine("date write error");
-                }
-
-                try
-                {
-                    paragraphsRec[0].CreateRun().SetText(resultForJsonMessage.JianyanOrjiance.Equals("检验") ? "D" : "E");
-                    paragraphsRec[0].CreateRun().SetText(resultForJsonMessage.ReportNum);
-                }
-                catch
-                {
-                    Console.WriteLine("reportNum2 write error");
-                }
-
-
-                string outPath = string.Format(workPath + "\\{0}_{1}_{2}.docx",
-                                                    resultForJsonMessage.DeviceCode,
-                                                    Path.GetFileNameWithoutExtension(jsonPath),
-                                                    resultForJsonMessage.NextYearFlag);
-                FileStream outFile = new FileStream(outPath, FileMode.OpenOrCreate, FileAccess.ReadWrite);
-                documentRec.Write(outFile);
-                outFile.Close();
-                documentRec.Close();
-                docFlieRec.Close();
-
-                Console.WriteLine("{0}打印记录完成", Path.GetFileNameWithoutExtension(jsonPath));
-                Console.WriteLine("-------------------------------------------------------");
-                Console.WriteLine("");
-
-                //写入报告模板3
-                try
-                {
-                    tableRep1.GetRow(0).GetCell(1).SetText(resultForJsonMessage.UserName);
-                    //左对齐
-                    tableRep1.GetRow(0).GetCell(1).Paragraphs[0].Alignment = ParagraphAlignment.LEFT;
-                }
-                catch
-                {
-                    Console.WriteLine("userName write error");
-                }
-
-                try
-                {
-                    tableRep1.GetRow(1).GetCell(1).SetText(resultForJsonMessage.UserName);
-                    //左对齐
-                    tableRep1.GetRow(1).GetCell(1).Paragraphs[0].Alignment = ParagraphAlignment.LEFT;
-                }
-                catch
-                {
-                    Console.WriteLine("userName write error");
-                }
-
-                try
-                {
-                    tableRep1.GetRow(2).GetCell(1).SetText(resultForJsonMessage.DeviceCode);
-                    //左对齐
-                    tableRep1.GetRow(2).GetCell(1).Paragraphs[0].Alignment = ParagraphAlignment.LEFT;
-                }
-                catch
-                {
-                    Console.WriteLine("deviceCode write error");
-                }
-
-                try
-                {
-                    tableRep1.GetRow(3).GetCell(1).SetText(resultForJsonMessage.SerialNum);
-                    //左对齐
-                    tableRep1.GetRow(3).GetCell(1).Paragraphs[0].Alignment = ParagraphAlignment.LEFT;
-                }
-                catch
-                {
-                    Console.WriteLine("serialNum write error");
-                }
-
-                try
-                {
-                    tableRep1.GetRow(4).GetCell(2).SetText(resultForJsonMessage.XiansuqiModel);
-                    //左对齐
-                    tableRep1.GetRow(4).GetCell(2).Paragraphs[0].Alignment = ParagraphAlignment.LEFT;
-                }
-                catch
-                {
-                    Console.WriteLine("xiansuqiModel write error");
-                }
-
-                try
-                {
-                    tableRep1.GetRow(4).GetCell(4).SetText(resultForJsonMessage.XiansuqiNum);
-                    //左对齐
-                    tableRep1.GetRow(4).GetCell(4).Paragraphs[0].Alignment = ParagraphAlignment.LEFT;
-                }
-                catch
-                {
-                    Console.WriteLine("xiansuqiNum write error");
-                }
-
-                try
-                {
-                    tableRep1.GetRow(5).GetCell(2).SetText(resultForJsonMessage.Speed + "m/s");
-                    //左对齐
-                    tableRep1.GetRow(5).GetCell(2).Paragraphs[0].Alignment = ParagraphAlignment.LEFT;
-                }
-                catch
-                {
-                    Console.WriteLine("speed write error");
-                }
-
-                try
-                {
-                    tableRep1.GetRow(5).GetCell(4).SetText(resultForJsonMessage.xiansuqiDirectionForReport);
-                    //左对齐
-                    tableRep1.GetRow(5).GetCell(4).Paragraphs[0].Alignment = ParagraphAlignment.LEFT;
-                }
-                catch
-                {
-                    Console.WriteLine("direction write error");
-                }
-
-
-
-                try
-                {
-                    tableRep1.GetRow(15).GetCell(1).SetText(resultForJsonMessage.MaintenanceUnit);
-                    //右对齐
-                    tableRep1.GetRow(15).GetCell(1).Paragraphs[0].Alignment = ParagraphAlignment.LEFT;
-                }
-                catch
-                {
-                    Console.WriteLine("MaintenanceUnit write error");
-                }
-
-                try
-                {
-                    tableRep1.GetRow(16).GetCell(3).SetText(resultForJsonMessage.NextYear);
-                    //右对齐
-                    tableRep1.GetRow(16).GetCell(3).Paragraphs[0].Alignment = ParagraphAlignment.RIGHT;
-                }
-                catch
-                {
-                    Console.WriteLine("nextYear write error");
-                }
-
-                try
-                {
-                    tableRep1.GetRow(17).GetCell(0).Paragraphs[0].CreateRun().SetText(resultForJsonMessage.Date);
-
-
-                    tableRep1.GetRow(18).GetCell(0).Paragraphs[0].CreateRun().SetText(resultForJsonMessage.ShenheDate);
-                    tableRep1.GetRow(19).GetCell(0).Paragraphs[0].CreateRun().SetText(resultForJsonMessage.ShenheDate);
-
-
-                    //左对齐
-                    tableRep1.GetRow(17).GetCell(0).Paragraphs[0].Alignment = ParagraphAlignment.LEFT;
-                    tableRep1.GetRow(18).GetCell(0).Paragraphs[0].Alignment = ParagraphAlignment.LEFT;
-                    tableRep1.GetRow(19).GetCell(0).Paragraphs[0].Alignment = ParagraphAlignment.LEFT;
-
-                }
-                catch
-                {
-                    Console.WriteLine("date write error");
-                }
-
-                try
-                {
-                    paragraphsRep[0].CreateRun().SetText(resultForJsonMessage.JianyanOrjiance.Equals("检验") ? "D" : "E");
-                    paragraphsRep[0].CreateRun().SetText(resultForJsonMessage.ReportNum);
-                    //if (jsonMessage["xiansuqiDirectionForReport"] == "双向")
-                    //{
-                    //    paragraphsRep[0].CreateRun().SetText("D");
-                    //}
-                }
-                catch
-                {
-                    Console.WriteLine("reportNum2 write error");
-                }
-
-
-                string outPath2 = string.Format(workPath + "\\{0}.docx", resultForJsonMessage.DeviceCode);
-                FileStream outFile2 = new FileStream(outPath2, FileMode.OpenOrCreate, FileAccess.ReadWrite);
-                documentRep.Write(outFile2);
-                outFile2.Close();
-                documentRep.Close();
-                docFlieRep.Close();
-
-                Console.WriteLine("{0}打印报告完成", Path.GetFileNameWithoutExtension(jsonPath));
-                Console.WriteLine("-------------------------------------------------------");
-                Console.WriteLine("");
-
-            }
-            Console.WriteLine("输入任意按钮退出");
-            Console.ReadKey();
+            finally{}
         }
     }
 }

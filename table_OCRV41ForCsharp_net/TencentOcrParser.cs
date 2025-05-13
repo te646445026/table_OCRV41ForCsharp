@@ -1,4 +1,5 @@
-﻿using System.Text.RegularExpressions;
+using System.Text.RegularExpressions;
+using System.Threading.Tasks;
 using Newtonsoft.Json.Linq;
 
 namespace table_OCRV41ForCsharp_net;
@@ -272,9 +273,25 @@ public class TencentOcrParser:IOcrParser
                 DateTime next_year_date = dateforcell.AddYears(int.Parse(nextdate));
                 result.NextYear = next_year_date.ToString("yyyy年MM月dd日");
                 result.NextYearFlag = "";
-                //计算审核校准日期
-                DateTime shenhe_dateforcell = dateforcell.AddDays(1);
-                result.ShenheDate = shenhe_dateforcell.ToString("yyyy年MM月dd日");
+                //计算审核校准日期（智能跳过节假日）
+                try
+                {
+                    // 尝试使用异步API获取下一个工作日（跳过节假日和周末）
+                    // 由于Parse方法不是异步的，我们需要使用Wait来等待异步操作完成
+                    Task<DateTime> nextWorkingDayTask = HolidayService.GetNextWorkingDayAsync(dateforcell);
+                    nextWorkingDayTask.Wait();
+                    DateTime shenhe_dateforcell = nextWorkingDayTask.Result;
+                    result.ShenheDate = shenhe_dateforcell.ToString("yyyy年MM月dd日");
+                    Console.WriteLine("审核校准日期（已跳过节假日和周末）: " + result.ShenheDate);
+                }
+                catch (Exception ex)
+                {
+                    // 如果API调用失败，回退到本地计算方法（只跳过周末）
+                    Console.WriteLine($"使用API获取工作日失败，回退到本地计算: {ex.Message}");
+                    DateTime shenhe_dateforcell = HolidayService.GetNextWorkingDay(dateforcell);
+                    result.ShenheDate = shenhe_dateforcell.ToString("yyyy年MM月dd日");
+                    Console.WriteLine("审核校准日期（已跳过周末）: " + result.ShenheDate);
+                }
             }
             else
             {
