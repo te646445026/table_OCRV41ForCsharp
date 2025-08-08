@@ -11,10 +11,18 @@ public class TencentOcrParser:IOcrParser
         var objs = JObject.Parse(json);
         OcrResult result = new OcrResult();
 
+        // ==================== OCR识别结果解析 ====================
+        Console.WriteLine();
+        Console.ForegroundColor = ConsoleColor.Cyan;
+        Console.WriteLine("┌─────────────────────────────────────────┐");
+        Console.WriteLine("│              OCR识别结果解析              │");
+        Console.WriteLine("└─────────────────────────────────────────┘");
+        Console.ResetColor();
+        Console.WriteLine();
+
         result.JianyanOrjiance = "检测";
         try
         {
-
             int indexj;
             int indexi;
             bool isContain;
@@ -25,13 +33,35 @@ public class TencentOcrParser:IOcrParser
                 result.JianyanOrjiance = "检验";
             }
 
-
-            Console.WriteLine("当前图片是: " + result.JianyanOrjiance);
+            Console.ForegroundColor = ConsoleColor.Green;
+            Console.WriteLine($"✓ 检测类型: {result.JianyanOrjiance}");
+            Console.ResetColor();
         }
         catch
         {
-            Console.WriteLine("获取检验还是检测失败,默认设置为检测");
-
+            Console.ForegroundColor = ConsoleColor.Red;
+            Console.WriteLine("✗ 获取检验还是检测失败，默认设置为检测");
+            Console.ResetColor();
+        }
+        
+        // 电梯设备品种 - 从OCR获取
+        try
+        {
+            int indexj;
+            int indexi;
+            bool isContain;
+            ObjsIndex("设备品种", objs, out indexj, out indexi, out isContain);
+            result.ElevatorDeviceType = objs["Response"]["TableDetections"][indexj]["Cells"][indexi + 1]["Text"].ToString().Replace("\n", "").Replace("\r", "");
+            Console.ForegroundColor = ConsoleColor.Green;
+            Console.WriteLine($"✓ 电梯设备品种: {result.ElevatorDeviceType}");
+            Console.ResetColor();
+        }
+        catch
+        {
+            Console.ForegroundColor = ConsoleColor.Red;
+            Console.WriteLine("✗ 电梯设备品种获取错误，已设置为默认值");
+            Console.ResetColor();
+            result.ElevatorDeviceType = "/";
         }
 
         try
@@ -166,33 +196,7 @@ public class TencentOcrParser:IOcrParser
             result.Speed = "/";
         }
         
-        //string temperature;
-        string jianyanOrjianceTiaojian;
-        try
-        {
-            if (result.JianyanOrjiance.Equals("检验"))
-            {
-                jianyanOrjianceTiaojian = "检验条件";
-            }
-            else
-            {
-                jianyanOrjianceTiaojian = "检测条件";
-            }
-            int indexj;
-            int indexi;
-            bool isContain;
-            ObjsIndex(jianyanOrjianceTiaojian, objs, out indexj, out indexi, out isContain);
-            result.Temperature = objs["Response"]["TableDetections"][indexj]["Cells"][indexi + 1]["Text"].ToString().Replace("\n", "").Replace("\r", "");
-            string temperature_pattern = @"\d{2,3}";
-            MatchCollection temperatureNeed = Regex.Matches(result.Temperature, temperature_pattern);
-            result.Temperature = $"温度：{temperatureNeed[0].ToString()}℃，  湿度：{temperatureNeed[1].ToString()}％ ， 电压：{temperatureNeed[2].ToString()}V";
-            Console.WriteLine("温度、湿度、电压: " + result.Temperature);
-        }
-        catch
-        {
-            Console.WriteLine("检验或检测条件获取错误");
-            result.Temperature = "温度：  ℃，湿度：  %，电压：  V";
-        }
+        // 温度、湿度、电压识别已移除
 
         //string reportNum;
         //string reportNum2;
@@ -260,17 +264,8 @@ public class TencentOcrParser:IOcrParser
                 result.Date = matches[0].Value + "年" + matches[1].Value + "月" + matches[2].Value + "日";
                 Console.WriteLine("检验时间为：" + result.Date);
                 DateTime dateforcell = new DateTime(year, month, day);
-                //计算2年后的日期
-                string? nextdate;
-                Console.WriteLine("请输入下次检验日期间隔，1代表1年，2代表2年: ");
-                nextdate = Console.ReadLine();
-                while (nextdate != "1" & nextdate != "2")
-                {
-                    Console.WriteLine("请输入下次检验日期间隔，1代表1年，2代表2年: ");
-                    nextdate = Console.ReadLine();
-                }
-
-                DateTime next_year_date = dateforcell.AddYears(int.Parse(nextdate));
+                //计算2年后的日期（默认2年间隔）
+                DateTime next_year_date = dateforcell.AddYears(2);
                 result.NextYear = next_year_date.ToString("yyyy年MM月dd日");
                 result.NextYearFlag = "";
                 //计算审核校准日期（智能跳过节假日）
@@ -311,43 +306,182 @@ public class TencentOcrParser:IOcrParser
             result.ShenheDate = "   年   月   日";
         }
 
-        //string xiansuqiModel;
+         // 限速器制造单位 - 手动输入
+        // ==================== 限速器基本信息录入 ====================
+        Console.WriteLine();
+        Console.ForegroundColor = ConsoleColor.Cyan;
+        Console.WriteLine("┌─────────────────────────────────────────┐");
+        Console.WriteLine("│              限速器基本信息录入              │");
+        Console.WriteLine("└─────────────────────────────────────────┘");
+        Console.ResetColor();
+        Console.WriteLine();
+
         try
         {
-            Console.WriteLine("输入限速器型号：");
-            result.XiansuqiModel = Console.ReadLine();
-            Console.WriteLine("限速器型号：" + result.XiansuqiModel);
+            Console.Write("请输入限速器制造单位: ");
+            result.XiansuqiManufacturingUnit = Console.ReadLine();
+            Console.ForegroundColor = ConsoleColor.Green;
+            Console.WriteLine($"✓ 限速器制造单位: {result.XiansuqiManufacturingUnit}");
+            Console.ResetColor();
         }
         catch
         {
-            Console.WriteLine("限速器型号获取错误");
+            Console.ForegroundColor = ConsoleColor.Red;
+            Console.WriteLine("✗ 限速器制造单位获取错误，已设置为默认值");
+            Console.ResetColor();
+            result.XiansuqiManufacturingUnit = "/";
+        }
+        
+        try
+        {
+            Console.Write("请输入限速器型号: ");
+            result.XiansuqiModel = Console.ReadLine();
+            Console.ForegroundColor = ConsoleColor.Green;
+            Console.WriteLine($"✓ 限速器型号: {result.XiansuqiModel}");
+            Console.ResetColor();
+        }
+        catch
+        {
+            Console.ForegroundColor = ConsoleColor.Red;
+            Console.WriteLine("✗ 限速器型号获取错误，已设置为默认值");
+            Console.ResetColor();
             result.XiansuqiModel = "/";
         }
-        //string xiansuqiNum;
+        
         try
         {
-            Console.WriteLine("输入限速器编号：");
+            Console.Write("请输入限速器编号: ");
             result.XiansuqiNum = Console.ReadLine();
-            Console.WriteLine("限速器编号：" + result.XiansuqiNum);
+            Console.ForegroundColor = ConsoleColor.Green;
+            Console.WriteLine($"✓ 限速器编号: {result.XiansuqiNum}");
+            Console.ResetColor();
         }
         catch
         {
-            Console.WriteLine("限速器编号获取错误");
+            Console.ForegroundColor = ConsoleColor.Red;
+            Console.WriteLine("✗ 限速器编号获取错误，已设置为默认值");
+            Console.ResetColor();
             result.XiansuqiNum = "/";
         }
-        //string xiansuqiDirection;
-        //string xiansuqiDirectionForReport;
-        Console.WriteLine("输入单向还是双向，0为单向，1为双向");
-        if (Console.ReadLine() == "0")
+        
+        Console.WriteLine();
+        Console.Write("请选择限速器方向 [0=单向, 1=双向]: ");
+        string directionInput = Console.ReadLine();
+        if (directionInput == "0")
         {
             result.XiansuqiDirection = "☑  单向 ☐  双向";
             result.xiansuqiDirectionForReport = "单向";
+            Console.ForegroundColor = ConsoleColor.Green;
+            Console.WriteLine("✓ 已选择: 单向");
         }
         else
         {
             result.XiansuqiDirection = "☐  单向 ☑  双向";
             result.xiansuqiDirectionForReport = "双向";
+            Console.ForegroundColor = ConsoleColor.Green;
+            Console.WriteLine("✓ 已选择: 双向");
         }
+        Console.ResetColor();
+
+       
+
+        
+
+        // ==================== 限速器铭牌速度参数录入 ====================
+        Console.WriteLine();
+        Console.ForegroundColor = ConsoleColor.Cyan;
+        Console.WriteLine("┌─────────────────────────────────────────┐");
+        Console.WriteLine("│            限速器铭牌速度参数录入            │");
+        Console.WriteLine("└─────────────────────────────────────────┘");
+        Console.ResetColor();
+        Console.WriteLine();
+
+        // 电气动作速度
+        Console.ForegroundColor = ConsoleColor.Yellow;
+        Console.WriteLine("【电气动作速度】");
+        Console.ResetColor();
+        
+        try
+        {
+            Console.Write("请输入限速器铭牌电气动作上行速度: ");
+            result.XiansuqiElectricalUpSpeed = Console.ReadLine();
+            Console.ForegroundColor = ConsoleColor.Green;
+            Console.WriteLine($"✓ 电气动作上行速度: {result.XiansuqiElectricalUpSpeed}");
+            Console.ResetColor();
+        }
+        catch
+        {
+            Console.ForegroundColor = ConsoleColor.Red;
+            Console.WriteLine("✗ 限速器铭牌电气动作上行速度获取错误，已设置为默认值");
+            Console.ResetColor();
+            result.XiansuqiElectricalUpSpeed = "/";
+        }
+        
+        try
+        {
+            Console.Write("请输入限速器铭牌电气动作下行速度: ");
+            result.XiansuqiElectricalDownSpeed = Console.ReadLine();
+            Console.ForegroundColor = ConsoleColor.Green;
+            Console.WriteLine($"✓ 电气动作下行速度: {result.XiansuqiElectricalDownSpeed}");
+            Console.ResetColor();
+        }
+        catch
+        {
+            Console.ForegroundColor = ConsoleColor.Red;
+            Console.WriteLine("✗ 限速器铭牌电气动作下行速度获取错误，已设置为默认值");
+            Console.ResetColor();
+            result.XiansuqiElectricalDownSpeed = "/";
+        }
+        
+        Console.WriteLine();
+        Console.ForegroundColor = ConsoleColor.Yellow;
+        Console.WriteLine("【机械动作速度】");
+        Console.ResetColor();
+        
+        try
+        {
+            Console.Write("请输入限速器铭牌机械动作上行速度: ");
+            result.XiansuqiMechanicalUpSpeed = Console.ReadLine();
+            Console.ForegroundColor = ConsoleColor.Green;
+            Console.WriteLine($"✓ 机械动作上行速度: {result.XiansuqiMechanicalUpSpeed}");
+            Console.ResetColor();
+        }
+        catch
+        {
+            Console.ForegroundColor = ConsoleColor.Red;
+            Console.WriteLine("✗ 限速器铭牌机械动作上行速度获取错误，已设置为默认值");
+            Console.ResetColor();
+            result.XiansuqiMechanicalUpSpeed = "/";
+        }
+        
+        try
+        {
+            Console.Write("请输入限速器铭牌机械动作下行速度: ");
+            result.XiansuqiMechanicalDownSpeed = Console.ReadLine();
+            Console.ForegroundColor = ConsoleColor.Green;
+            Console.WriteLine($"✓ 机械动作下行速度: {result.XiansuqiMechanicalDownSpeed}");
+            Console.ResetColor();
+        }
+        catch
+        {
+            Console.ForegroundColor = ConsoleColor.Red;
+            Console.WriteLine("✗ 限速器铭牌机械动作下行速度获取错误，已设置为默认值");
+            Console.ResetColor();
+            result.XiansuqiMechanicalDownSpeed = "/";
+        }
+
+        // ==================== 数据录入完成 ====================
+        Console.WriteLine();
+        Console.ForegroundColor = ConsoleColor.Green;
+        Console.WriteLine("┌─────────────────────────────────────────┐");
+        Console.WriteLine("│              数据录入完成                │");
+        Console.WriteLine("└─────────────────────────────────────────┘");
+        Console.ResetColor();
+        Console.WriteLine();
+        Console.ForegroundColor = ConsoleColor.Yellow;
+        Console.WriteLine("📊 正在生成Word报告，请稍候...");
+        Console.ResetColor();
+        Console.WriteLine();
 
         return result;
     }

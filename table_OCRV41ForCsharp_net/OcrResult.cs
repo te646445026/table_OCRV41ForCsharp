@@ -1,4 +1,4 @@
-﻿namespace table_OCRV41ForCsharp_net;
+namespace table_OCRV41ForCsharp_net;
 
 public class OcrResult
 {
@@ -11,7 +11,7 @@ public class OcrResult
     public string UsingAddress { get; set; }
     public string MaintenanceUnit { get; set; }
     public string Speed { get; set; }
-    public string Temperature { get; set; }
+
     public string ReportNum { get; set; }
     public string Date { get; set; }
     public string NextYear { get; set; }
@@ -22,4 +22,10 @@ public class OcrResult
     public string NextYearFlag { get; set; }
     public string ShenheDate { get; set; }
     public string JianyanOrjiance { get; set; }
+    public string XiansuqiManufacturingUnit { get; set; }
+    public string XiansuqiElectricalUpSpeed { get; set; }
+    public string XiansuqiElectricalDownSpeed { get; set; }
+    public string XiansuqiMechanicalUpSpeed { get; set; }
+    public string XiansuqiMechanicalDownSpeed { get; set; }
+    public string ElevatorDeviceType { get; set; }
 }

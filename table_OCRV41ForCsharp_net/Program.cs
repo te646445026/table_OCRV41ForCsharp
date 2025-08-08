@@ -137,6 +137,9 @@ namespace table_OCRV41ForCsharp_net
             try
             {
                 logger.Log(LogLevel.Info, "应用程序启动");
+                
+                // 显示程序启动界面
+                DisplayWelcomeScreen();
 
                 string? workPath;
                 string dataDir = "";
@@ -162,7 +165,8 @@ namespace table_OCRV41ForCsharp_net
                     workPath = path.FolderPath;
                     logger.Log(LogLevel.Info, $"工作路径: {workPath}");
 
-                    Console.WriteLine("已生成识别结果请按0，未生成请按1：");
+                    // 显示选择菜单
+                    DisplayMainMenu();
                     string? situation = Console.ReadLine();
                     logger.Log(LogLevel.Info, $"用户选择: {situation}");
 
@@ -293,8 +297,8 @@ namespace table_OCRV41ForCsharp_net
                             logger.Log(LogLevel.Info, $"成功解析JSON文件: {Path.GetFileName(jsonPath)}");
 
                             // 根据模板，写入对应的word文档里面
-                            string recordTemplatePath = workPath + "\\限速器测试记录模板3.docx";
-                            string reportTemplatePath = workPath + "\\限速器测试报告模板3.docx";
+                            string recordTemplatePath = workPath + "\\限速器测试记录模板4.docx";
+                            string reportTemplatePath = workPath + "\\限速器测试报告模板4.docx";
 
                             if (!File.Exists(recordTemplatePath) || !File.Exists(reportTemplatePath))
                             {
@@ -309,14 +313,15 @@ namespace table_OCRV41ForCsharp_net
                             XWPFDocument documentRep = new XWPFDocument(docFlieRep);
 
                             IList<XWPFParagraph> paragraphsRec = documentRec.Paragraphs;
-                            Console.WriteLine(paragraphsRec[0].ParagraphText + resultForJsonMessage.ReportNum);
+                            Console.WriteLine(paragraphsRec[2].ParagraphText + resultForJsonMessage.ReportNum);
 
                             IList<XWPFTable> tablesRec = documentRec.Tables;
                             XWPFTable tableRec0 = tablesRec[0];
                             XWPFTable tableRec1 = tablesRec[1];
 
+                            
                             IList<XWPFParagraph> paragraphsRep = documentRep.Paragraphs;
-                            Console.WriteLine(paragraphsRep[0].ParagraphText + resultForJsonMessage.ReportNum);
+                            Console.WriteLine(paragraphsRep[3].ParagraphText + resultForJsonMessage.ReportNum);
 
                             IList<XWPFTable> tablesRep = documentRep.Tables;
                             XWPFTable tableRep0 = tablesRep[0];
@@ -327,110 +332,33 @@ namespace table_OCRV41ForCsharp_net
                             //写入记录for模板3
                             try
                             {
-                                tableRec1.GetRow(0).GetCell(1).SetText(resultForJsonMessage.UserName);
+                                tableRec0.GetRow(0).GetCell(1).SetText(resultForJsonMessage.UserName);
                                 //左对齐
-                                tableRec1.GetRow(0).GetCell(1).Paragraphs[0].Alignment = ParagraphAlignment.LEFT;
+                                tableRec0.GetRow(0).GetCell(1).Paragraphs[0].Alignment = ParagraphAlignment.LEFT;
                             }
                             catch (Exception ex)
                             {
-                                logger.Log(LogLevel.Warning, "设置用户名时出错", ex);
+                                logger.Log(LogLevel.Warning, "设置委托单位时出错", ex);
                                 Console.WriteLine("userName write error");
                             }
 
                             try
                             {
-                                tableRec1.GetRow(1).GetCell(1).SetText(resultForJsonMessage.UserName);
+                                tableRec0.GetRow(1).GetCell(1).SetText(resultForJsonMessage.UserName);
                                 //左对齐
-                                tableRec1.GetRow(1).GetCell(1).Paragraphs[0].Alignment = ParagraphAlignment.LEFT;
+                                tableRec0.GetRow(1).GetCell(1).Paragraphs[0].Alignment = ParagraphAlignment.LEFT;
                             }
                             catch (Exception ex)
                             {
-                                logger.Log(LogLevel.Warning, "设置用户名时出错", ex);
+                                logger.Log(LogLevel.Warning, "设置使用单位时出错", ex);
                                 Console.WriteLine("userName write error");
                             }
 
                             try
                             {
-                                tableRec1.GetRow(2).GetCell(1).SetText(resultForJsonMessage.DeviceCode);
+                                tableRec0.GetRow(2).GetCell(1).SetText(resultForJsonMessage.MaintenanceUnit);
                                 //左对齐
-                                tableRec1.GetRow(2).GetCell(1).Paragraphs[0].Alignment = ParagraphAlignment.LEFT;
-                            }
-                            catch
-                            {
-                                Console.WriteLine("deviceCode write error");
-                            }
-
-                            try
-                            {
-                                tableRec1.GetRow(3).GetCell(1).SetText(resultForJsonMessage.SerialNum);
-                                //左对齐
-                                tableRec1.GetRow(3).GetCell(1).Paragraphs[0].Alignment = ParagraphAlignment.LEFT;
-                            }
-                            catch
-                            {
-                                Console.WriteLine("serialNum write error");
-                            }
-
-                            try
-                            {
-                                tableRec1.GetRow(4).GetCell(2).SetText(resultForJsonMessage.XiansuqiModel);
-                                //左对齐
-                                tableRec1.GetRow(4).GetCell(2).Paragraphs[0].Alignment = ParagraphAlignment.LEFT;
-                            }
-                            catch
-                            {
-                                Console.WriteLine("xiansuqiModel write error");
-                            }
-
-                            try
-                            {
-                                tableRec1.GetRow(4).GetCell(4).SetText(resultForJsonMessage.XiansuqiNum);
-                                //左对齐
-                                tableRec1.GetRow(4).GetCell(4).Paragraphs[0].Alignment = ParagraphAlignment.LEFT;
-                            }
-                            catch
-                            {
-                                Console.WriteLine("xiansuqiNum write error");
-                            }
-
-                            try
-                            {
-                                tableRec1.GetRow(5).GetCell(2).SetText(resultForJsonMessage.Speed + "m/s");
-                                //左对齐
-                                tableRec1.GetRow(5).GetCell(2).Paragraphs[0].Alignment = ParagraphAlignment.LEFT;
-                            }
-                            catch
-                            {
-                                Console.WriteLine("speed write error");
-                            }
-
-                            try
-                            {
-                                tableRec1.GetRow(5).GetCell(4).SetText(resultForJsonMessage.XiansuqiDirection);
-                                //左对齐
-                                tableRec1.GetRow(5).GetCell(4).Paragraphs[0].Alignment = ParagraphAlignment.LEFT;
-                            }
-                            catch
-                            {
-                                Console.WriteLine("direction write error");
-                            }
-
-                            try
-                            {
-                                tableRec1.GetRow(15).GetCell(1).SetText(resultForJsonMessage.Temperature);
-                                //左对齐
-                                tableRec1.GetRow(15).GetCell(1).Paragraphs[0].Alignment = ParagraphAlignment.LEFT;
-                            }
-                            catch
-                            {
-                                Console.WriteLine("temperature write error");
-                            }
-
-                            try
-                            {
-                                tableRec1.GetRow(17).GetCell(1).SetText(resultForJsonMessage.MaintenanceUnit);
-                                //左对齐
-                                tableRec1.GetRow(17).GetCell(1).Paragraphs[0].Alignment = ParagraphAlignment.LEFT;
+                                tableRec0.GetRow(2).GetCell(1).Paragraphs[0].Alignment = ParagraphAlignment.LEFT;
                             }
                             catch
                             {
@@ -439,20 +367,155 @@ namespace table_OCRV41ForCsharp_net
 
                             try
                             {
-                                tableRec1.GetRow(19).GetCell(3).SetText(resultForJsonMessage.NextYear);
-                                //右对齐
-                                tableRec1.GetRow(19).GetCell(3).Paragraphs[0].Alignment = ParagraphAlignment.RIGHT;
+                                tableRec0.GetRow(3).GetCell(1).SetText(resultForJsonMessage.UsingAddress);
+                                //左对齐
+                                tableRec0.GetRow(3).GetCell(1).Paragraphs[0].Alignment = ParagraphAlignment.LEFT;
                             }
                             catch
                             {
-                                Console.WriteLine("nextYear write error");
+                                Console.WriteLine("UsingAddress write error");
                             }
 
                             try
                             {
-                                tableRec1.GetRow(18).GetCell(3).Paragraphs[0].CreateRun().SetText(resultForJsonMessage.Date);
+                                tableRec0.GetRow(4).GetCell(2).SetText(resultForJsonMessage.ElevatorDeviceType);
+                                //左对齐
+                                tableRec0.GetRow(4).GetCell(2).Paragraphs[0].Alignment = ParagraphAlignment.LEFT;
+                            }
+                            catch
+                            {
+                                Console.WriteLine("ElevatorDeviceType write error");
+                            }
+
+                            try
+                            {
+                                tableRec0.GetRow(4).GetCell(4).SetText(resultForJsonMessage.DeviceCode);
+                                //左对齐
+                                tableRec0.GetRow(4).GetCell(4).Paragraphs[0].Alignment = ParagraphAlignment.LEFT;
+                            }
+                            catch
+                            {
+                                Console.WriteLine("DeviceCode write error");
+                            }
+
+                            try
+                            {
+                                tableRec0.GetRow(5).GetCell(2).SetText(resultForJsonMessage.SerialNum);
+                                //左对齐
+                                tableRec0.GetRow(5).GetCell(2).Paragraphs[0].Alignment = ParagraphAlignment.LEFT;
+                            }
+                            catch
+                            {
+                                Console.WriteLine("SerialNum write error");
+                            }
+
+                            try
+                            {
+                                tableRec0.GetRow(5).GetCell(4).SetText(resultForJsonMessage.Speed + "m/s");
+                                //左对齐
+                                tableRec0.GetRow(5).GetCell(4).Paragraphs[0].Alignment = ParagraphAlignment.LEFT;
+                            }
+                            catch
+                            {
+                                Console.WriteLine("speed write error");
+                            }
+
+                           try
+                           {
+                                tableRec0.GetRow(6).GetCell(2).SetText(resultForJsonMessage.XiansuqiManufacturingUnit);
+                                //左对齐
+                                tableRec0.GetRow(6).GetCell(2).Paragraphs[0].Alignment = ParagraphAlignment.LEFT;
+                           }
+                           catch
+                           {
+                                Console.WriteLine("XiansuqiManufacturingUnit write error");
+                           }
+
+                           
+
+                           try
+                           {
+                                tableRec0.GetRow(7).GetCell(2).SetText(resultForJsonMessage.XiansuqiModel);
+                                //左对齐
+                                tableRec0.GetRow(7).GetCell(2).Paragraphs[0].Alignment = ParagraphAlignment.LEFT;
+                           }
+                           catch
+                           {
+                                Console.WriteLine("XiansuqiModel write error");
+                           }
+
+                            try
+                           {
+                                tableRec0.GetRow(7).GetCell(4).SetText(resultForJsonMessage.XiansuqiNum);
+                                //左对齐
+                                tableRec0.GetRow(7).GetCell(4).Paragraphs[0].Alignment = ParagraphAlignment.LEFT;
+                           }
+                           catch
+                           {
+                                Console.WriteLine("XiansuqiNum write error");
+                           }
+
+                            try
+                           {
+                                tableRec0.GetRow(8).GetCell(4).SetText(resultForJsonMessage.XiansuqiDirection);
+                                //左对齐
+                                tableRec0.GetRow(8).GetCell(4).Paragraphs[0].Alignment = ParagraphAlignment.LEFT;
+                           }
+                           catch
+                           {
+                                Console.WriteLine("XiansuqiDirection write error");
+                           }
+
+                            try
+                            {
+                                tableRec0.GetRow(10).GetCell(1).Paragraphs[0].CreateRun().SetText(resultForJsonMessage.XiansuqiElectricalUpSpeed + "m/s");
+                                //左对齐
+                                tableRec0.GetRow(10).GetCell(1).Paragraphs[0].Alignment = ParagraphAlignment.LEFT;
+                            }
+                            catch
+                            {
+                                Console.WriteLine("XiansuqiElectricalUpSpeed write error");
+                            }
+
+                            try
+                            {
+                                tableRec0.GetRow(10).GetCell(2).Paragraphs[0].CreateRun().SetText(resultForJsonMessage.XiansuqiElectricalDownSpeed + "m/s");
+                                //左对齐
+                                tableRec0.GetRow(10).GetCell(2).Paragraphs[0].Alignment = ParagraphAlignment.LEFT;
+                            }
+                            catch
+                            {
+                                Console.WriteLine("XiansuqiElectricalDownSpeed write error");
+                            }
+
+                            try
+                            {
+                                tableRec0.GetRow(10).GetCell(3).Paragraphs[0].CreateRun().SetText(resultForJsonMessage.XiansuqiMechanicalUpSpeed + "m/s");
+                                //左对齐
+                                tableRec0.GetRow(10).GetCell(3).Paragraphs[0].Alignment = ParagraphAlignment.LEFT;
+                            }
+                            catch
+                            {
+                                Console.WriteLine("XiansuqiMechanicalUpSpeed write error");
+                            }
+
+                            try
+                            {
+                                tableRec0.GetRow(10).GetCell(4).Paragraphs[0].CreateRun().SetText(resultForJsonMessage.XiansuqiMechanicalDownSpeed + "m/s");
+                                //左对齐
+                                tableRec0.GetRow(10).GetCell(4).Paragraphs[0].Alignment = ParagraphAlignment.LEFT;
+                            }
+                            catch
+                            {
+                                Console.WriteLine("XiansuqiMechanicalDownSpeed write error");
+                            }
+
+
+                            try
+                            {
+                                tableRec0.GetRow(25).GetCell(0).Paragraphs[0].CreateRun().SetText(resultForJsonMessage.Date);
                                 //右对齐
-                                tableRec1.GetRow(18).GetCell(3).Paragraphs[0].Alignment = ParagraphAlignment.RIGHT;
+                                tableRec0.GetRow(25).GetCell(0).Paragraphs[0].Alignment = ParagraphAlignment.RIGHT;
 
                             }
                             catch
@@ -462,8 +525,9 @@ namespace table_OCRV41ForCsharp_net
 
                             try
                             {
-                                paragraphsRec[0].CreateRun().SetText(resultForJsonMessage.JianyanOrjiance.Equals("检验") ? "D" : "E");
-                                paragraphsRec[0].CreateRun().SetText(resultForJsonMessage.ReportNum);
+                                paragraphsRec[2].CreateRun().SetText(resultForJsonMessage.JianyanOrjiance.Equals("检验") ? "D" : "E");
+                                paragraphsRec[2].CreateRun().SetText(resultForJsonMessage.ReportNum);
+                                paragraphsRec[2].Alignment = ParagraphAlignment.RIGHT;
                             }
                             catch
                             {
@@ -488,9 +552,9 @@ namespace table_OCRV41ForCsharp_net
                             //写入报告模板3
                             try
                             {
-                                tableRep1.GetRow(0).GetCell(1).SetText(resultForJsonMessage.UserName);
+                                tableRep0.GetRow(0).GetCell(1).SetText(resultForJsonMessage.UserName);
                                 //左对齐
-                                tableRep1.GetRow(0).GetCell(1).Paragraphs[0].Alignment = ParagraphAlignment.LEFT;
+                                tableRep0.GetRow(0).GetCell(1).Paragraphs[0].Alignment = ParagraphAlignment.LEFT;
                             }
                             catch
                             {
@@ -499,9 +563,9 @@ namespace table_OCRV41ForCsharp_net
 
                             try
                             {
-                                tableRep1.GetRow(1).GetCell(1).SetText(resultForJsonMessage.UserName);
+                                tableRep0.GetRow(1).GetCell(1).SetText(resultForJsonMessage.UserName);
                                 //左对齐
-                                tableRep1.GetRow(1).GetCell(1).Paragraphs[0].Alignment = ParagraphAlignment.LEFT;
+                                tableRep0.GetRow(1).GetCell(1).Paragraphs[0].Alignment = ParagraphAlignment.LEFT;
                             }
                             catch
                             {
@@ -510,77 +574,9 @@ namespace table_OCRV41ForCsharp_net
 
                             try
                             {
-                                tableRep1.GetRow(2).GetCell(1).SetText(resultForJsonMessage.DeviceCode);
+                                tableRep0.GetRow(2).GetCell(1).SetText(resultForJsonMessage.MaintenanceUnit);
                                 //左对齐
-                                tableRep1.GetRow(2).GetCell(1).Paragraphs[0].Alignment = ParagraphAlignment.LEFT;
-                            }
-                            catch
-                            {
-                                Console.WriteLine("deviceCode write error");
-                            }
-
-                            try
-                            {
-                                tableRep1.GetRow(3).GetCell(1).SetText(resultForJsonMessage.SerialNum);
-                                //左对齐
-                                tableRep1.GetRow(3).GetCell(1).Paragraphs[0].Alignment = ParagraphAlignment.LEFT;
-                            }
-                            catch
-                            {
-                                Console.WriteLine("serialNum write error");
-                            }
-
-                            try
-                            {
-                                tableRep1.GetRow(4).GetCell(2).SetText(resultForJsonMessage.XiansuqiModel);
-                                //左对齐
-                                tableRep1.GetRow(4).GetCell(2).Paragraphs[0].Alignment = ParagraphAlignment.LEFT;
-                            }
-                            catch
-                            {
-                                Console.WriteLine("xiansuqiModel write error");
-                            }
-
-                            try
-                            {
-                                tableRep1.GetRow(4).GetCell(4).SetText(resultForJsonMessage.XiansuqiNum);
-                                //左对齐
-                                tableRep1.GetRow(4).GetCell(4).Paragraphs[0].Alignment = ParagraphAlignment.LEFT;
-                            }
-                            catch
-                            {
-                                Console.WriteLine("xiansuqiNum write error");
-                            }
-
-                            try
-                            {
-                                tableRep1.GetRow(5).GetCell(2).SetText(resultForJsonMessage.Speed + "m/s");
-                                //左对齐
-                                tableRep1.GetRow(5).GetCell(2).Paragraphs[0].Alignment = ParagraphAlignment.LEFT;
-                            }
-                            catch
-                            {
-                                Console.WriteLine("speed write error");
-                            }
-
-                            try
-                            {
-                                tableRep1.GetRow(5).GetCell(4).SetText(resultForJsonMessage.xiansuqiDirectionForReport);
-                                //左对齐
-                                tableRep1.GetRow(5).GetCell(4).Paragraphs[0].Alignment = ParagraphAlignment.LEFT;
-                            }
-                            catch
-                            {
-                                Console.WriteLine("direction write error");
-                            }
-
-
-
-                            try
-                            {
-                                tableRep1.GetRow(15).GetCell(1).SetText(resultForJsonMessage.MaintenanceUnit);
-                                //右对齐
-                                tableRep1.GetRow(15).GetCell(1).Paragraphs[0].Alignment = ParagraphAlignment.LEFT;
+                                tableRep0.GetRow(2).GetCell(1).Paragraphs[0].Alignment = ParagraphAlignment.LEFT;
                             }
                             catch
                             {
@@ -589,39 +585,218 @@ namespace table_OCRV41ForCsharp_net
 
                             try
                             {
-                                tableRep1.GetRow(16).GetCell(3).SetText(resultForJsonMessage.NextYear);
-                                //右对齐
-                                tableRep1.GetRow(16).GetCell(3).Paragraphs[0].Alignment = ParagraphAlignment.RIGHT;
-                            }
-                            catch
-                            {
-                                Console.WriteLine("nextYear write error");
-                            }
-
-                            try
-                            {
-                                tableRep1.GetRow(17).GetCell(0).Paragraphs[0].CreateRun().SetText(resultForJsonMessage.Date);
-
-
-                                tableRep1.GetRow(18).GetCell(0).Paragraphs[0].CreateRun().SetText(resultForJsonMessage.ShenheDate);
-                                tableRep1.GetRow(19).GetCell(0).Paragraphs[0].CreateRun().SetText(resultForJsonMessage.ShenheDate);
-
-
+                                tableRep0.GetRow(3).GetCell(1).SetText(resultForJsonMessage.UsingAddress);
                                 //左对齐
-                                tableRep1.GetRow(17).GetCell(0).Paragraphs[0].Alignment = ParagraphAlignment.LEFT;
-                                tableRep1.GetRow(18).GetCell(0).Paragraphs[0].Alignment = ParagraphAlignment.LEFT;
-                                tableRep1.GetRow(19).GetCell(0).Paragraphs[0].Alignment = ParagraphAlignment.LEFT;
-
+                                tableRep0.GetRow(3).GetCell(1).Paragraphs[0].Alignment = ParagraphAlignment.LEFT;
                             }
                             catch
                             {
-                                Console.WriteLine("date write error");
+                                Console.WriteLine("UsingAddress write error");
                             }
 
                             try
                             {
-                                paragraphsRep[0].CreateRun().SetText(resultForJsonMessage.JianyanOrjiance.Equals("检验") ? "D" : "E");
-                                paragraphsRep[0].CreateRun().SetText(resultForJsonMessage.ReportNum);
+                                tableRep0.GetRow(4).GetCell(2).SetText(resultForJsonMessage.ElevatorDeviceType);
+                                //左对齐
+                                tableRep0.GetRow(4).GetCell(2).Paragraphs[0].Alignment = ParagraphAlignment.LEFT;
+                            }
+                            catch
+                            {
+                                Console.WriteLine("ElevatorDeviceType write error");
+                            }
+
+                            try
+                            {
+                                tableRep0.GetRow(4).GetCell(4).SetText(resultForJsonMessage.DeviceCode);
+                                //左对齐
+                                tableRep0.GetRow(4).GetCell(4).Paragraphs[0].Alignment = ParagraphAlignment.LEFT;
+                            }
+                            catch
+                            {
+                                Console.WriteLine("DeviceCode write error");
+                            }
+
+                            try
+                            {
+                                tableRep0.GetRow(5).GetCell(2).SetText(resultForJsonMessage.SerialNum);
+                                //左对齐
+                                tableRep0.GetRow(5).GetCell(2).Paragraphs[0].Alignment = ParagraphAlignment.LEFT;
+                            }
+                            catch
+                            {
+                                Console.WriteLine("SerialNum write error");
+                            }
+
+                            try
+                            {
+                                tableRep0.GetRow(5).GetCell(4).SetText(resultForJsonMessage.Speed+ "m/s");
+                                //左对齐
+                                tableRep0.GetRow(5).GetCell(4).Paragraphs[0].Alignment = ParagraphAlignment.LEFT;
+                            }
+                            catch
+                            {
+                                Console.WriteLine("Speed write error");
+                            }
+
+                            try
+                            {
+                                tableRep0.GetRow(6).GetCell(2).SetText(resultForJsonMessage.XiansuqiManufacturingUnit);
+                                //左对齐
+                                tableRep0.GetRow(6).GetCell(2).Paragraphs[0].Alignment = ParagraphAlignment.LEFT;
+                            }
+                            catch
+                            {
+                                Console.WriteLine("XiansuqiManufacturingUnit write error");
+                            }
+
+                            try
+                            {
+                                tableRep0.GetRow(7).GetCell(2).SetText(resultForJsonMessage.XiansuqiModel);
+                                //左对齐
+                                tableRep0.GetRow(7).GetCell(2).Paragraphs[0].Alignment = ParagraphAlignment.LEFT;
+                            }
+                            catch
+                            {
+                                Console.WriteLine("XiansuqiModel write error");
+                            }
+
+                            try
+                            {
+                                tableRep0.GetRow(8).GetCell(4).SetText(resultForJsonMessage.XiansuqiDirection);
+                                //左对齐
+                                tableRep0.GetRow(8).GetCell(4).Paragraphs[0].Alignment = ParagraphAlignment.LEFT;
+                            }
+                            catch
+                            {
+                                Console.WriteLine("XiansuqiDirection write error");
+                            }
+
+                            try
+                            {
+                                tableRep0.GetRow(10).GetCell(1).Paragraphs[0].CreateRun().SetText(resultForJsonMessage.XiansuqiElectricalUpSpeed + "m/s");
+                                //左对齐
+                                tableRep0.GetRow(10).GetCell(1).Paragraphs[0].Alignment = ParagraphAlignment.LEFT;
+                            }
+                            catch
+                            {
+                                Console.WriteLine("XiansuqiElectricalUpSpeed write error");
+                            }
+
+                            try
+                            {
+                                tableRep0.GetRow(10).GetCell(2).Paragraphs[0].CreateRun().SetText(resultForJsonMessage.XiansuqiElectricalDownSpeed + "m/s");
+                                //左对齐
+                                tableRep0.GetRow(10).GetCell(2).Paragraphs[0].Alignment = ParagraphAlignment.LEFT;
+                            }
+                            catch
+                            {
+                                Console.WriteLine("XiansuqiElectricalDownSpeed write error");
+                            }
+
+                            try
+                            {
+                                tableRep0.GetRow(10).GetCell(3).Paragraphs[0].CreateRun().SetText(resultForJsonMessage.XiansuqiMechanicalUpSpeed + "m/s");
+                                //左对齐
+                                tableRep0.GetRow(10).GetCell(3).Paragraphs[0].Alignment = ParagraphAlignment.LEFT;
+                            }
+                            catch
+                            {
+                                Console.WriteLine("XiansuqiMechanicalUpSpeed write error");
+                            }
+
+                            try
+                            {
+                                tableRep0.GetRow(10).GetCell(4).Paragraphs[0].CreateRun().SetText(resultForJsonMessage.XiansuqiMechanicalDownSpeed + "m/s");
+                                //左对齐
+                                tableRep0.GetRow(10).GetCell(4).Paragraphs[0].Alignment = ParagraphAlignment.LEFT;
+                            }
+                            catch
+                            {
+                                Console.WriteLine("XiansuqiMechanicalDownSpeed write error");
+                            }
+
+
+
+                            try
+                            {
+                                tableRep0.GetRow(22).GetCell(0).SetText(resultForJsonMessage.Date);
+                                //右对齐
+                                tableRep0.GetRow(22).GetCell(0).Paragraphs[0].Alignment = ParagraphAlignment.LEFT;
+                            }
+                            catch
+                            {
+                                Console.WriteLine("Date write error");
+                            }
+
+                            try
+                            {
+                                tableRep0.GetRow(23).GetCell(0).SetText(resultForJsonMessage.ShenheDate);
+                                //右对齐
+                                tableRep0.GetRow(23).GetCell(0).Paragraphs[0].Alignment = ParagraphAlignment.LEFT;
+                            }
+                            catch
+                            {
+                                Console.WriteLine("ShenheDate write error");
+                            }
+
+                            try
+                            {
+                                tableRep0.GetRow(24).GetCell(0).SetText(resultForJsonMessage.ShenheDate);
+                                //右对齐
+                                tableRep0.GetRow(24).GetCell(0).Paragraphs[0].Alignment = ParagraphAlignment.LEFT;
+                            }
+                            catch
+                            {
+                                Console.WriteLine("ShenheDate write error");
+                            }
+
+
+                            try
+                            {
+                                //
+                                paragraphsRep[3].CreateRun().SetText(resultForJsonMessage.JianyanOrjiance.Equals("检验") ? "D" : "E");
+                                paragraphsRep[3].CreateRun().SetText(resultForJsonMessage.ReportNum);
+                                paragraphsRep[3].Alignment = ParagraphAlignment.RIGHT;
+                                //
+                                // 检查段落是否已有Run，如果有则复制格式
+                                var newRun = paragraphsRep[15].CreateRun();
+                                if (paragraphsRep[15].Runs.Count > 1)
+                                {
+                                    var existingRun = paragraphsRep[15].Runs[0];
+                                    // 复制字体格式
+                                    newRun.FontSize = existingRun.FontSize;
+                                    newRun.FontFamily = existingRun.FontFamily;
+                                    newRun.IsBold = existingRun.IsBold;
+                                    newRun.IsItalic = existingRun.IsItalic;
+                                    newRun.Underline = UnderlinePatterns.Single;
+                                }
+                                else
+                                {
+                                    newRun.Underline = UnderlinePatterns.Single; // 设置下划线
+                                }
+                                newRun.SetText(resultForJsonMessage.UserName);  
+                                //
+                                
+                                newRun = paragraphsRep[17].CreateRun();
+                                if (paragraphsRep[17].Runs.Count > 1)
+                                {
+                                    var existingRun = paragraphsRep[17].Runs[0];
+                                    // 复制字体格式
+                                    newRun.FontSize = existingRun.FontSize;
+                                    newRun.FontFamily = existingRun.FontFamily;
+                                    newRun.IsBold = existingRun.IsBold;
+                                    newRun.IsItalic = existingRun.IsItalic;
+                                    newRun.Underline = UnderlinePatterns.Single;
+                                }
+                                else
+                                {
+                                    newRun.Underline = UnderlinePatterns.Single; // 设置下划线
+                                }
+                                newRun.SetText(resultForJsonMessage.Date); 
+                                //
+                                paragraphsRep[53].CreateRun().SetText(resultForJsonMessage.JianyanOrjiance.Equals("检验") ? "D" : "E");
+                                paragraphsRep[53].CreateRun().SetText(resultForJsonMessage.ReportNum);
+                                paragraphsRep[53].Alignment = ParagraphAlignment.RIGHT;
                             }
                             catch
                             {
@@ -650,7 +825,10 @@ namespace table_OCRV41ForCsharp_net
                     }
 
                     logger.Log(LogLevel.Info, "所有文件处理完成");
-                    Console.WriteLine("输入任意按钮退出");
+                    Console.WriteLine();
+                    Console.ForegroundColor = ConsoleColor.Green;
+                    Console.WriteLine("🎉 处理完成！按任意键退出程序");
+                    Console.ResetColor();
                     Console.ReadKey();
                 }
                 catch (Exception ex)
@@ -664,6 +842,46 @@ namespace table_OCRV41ForCsharp_net
                 }
             }
             finally{}
+        }
+        
+        /// <summary>
+        /// 显示程序启动欢迎界面
+        /// </summary>
+        private static void DisplayWelcomeScreen()
+        {
+            Console.Clear();
+            Console.ForegroundColor = ConsoleColor.Cyan;
+            Console.WriteLine("╔══════════════════════════════════════════════════════════════╗");
+            Console.WriteLine("║                    电梯限速器检测报告生成系统                    ║");
+            Console.WriteLine("║                    Elevator Speed Limiter Report              ║");
+            Console.WriteLine("║                         Generation System                     ║");
+            Console.WriteLine("╚══════════════════════════════════════════════════════════════╝");
+            Console.ResetColor();
+            Console.WriteLine();
+            Console.ForegroundColor = ConsoleColor.Yellow;
+            Console.WriteLine("📋 功能说明:");
+            Console.WriteLine("   • 支持OCR图片识别，自动提取检测数据");
+            Console.WriteLine("   • 支持从JSON文件读取已识别的数据");
+            Console.WriteLine("   • 自动生成标准格式的Word检测报告");
+            Console.ResetColor();
+            Console.WriteLine();
+        }
+        
+        /// <summary>
+        /// 显示主菜单选择界面
+        /// </summary>
+        private static void DisplayMainMenu()
+        {
+            Console.ForegroundColor = ConsoleColor.Magenta;
+            Console.WriteLine("┌─────────────────────────────────────────┐");
+            Console.WriteLine("│                 选择操作模式                │");
+            Console.WriteLine("└─────────────────────────────────────────┘");
+            Console.ResetColor();
+            Console.WriteLine();
+            Console.WriteLine("📂 [0] 使用已生成的识别结果文件");
+            Console.WriteLine("🖼️ [1] 上传图片进行OCR识别");
+            Console.WriteLine();
+            Console.Write("请输入您的选择 [0/1]: ");
         }
     }
 }
