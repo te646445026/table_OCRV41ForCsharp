@@ -4,9 +4,9 @@ using System.Runtime.InteropServices;
 
 // 有关程序集的一般信息由以下
 // 控制。更改这些特性值可修改
-// 与程序集关联的元数据。
+// 与程序集关联的信息。
 [assembly: AssemblyTitle("table_OCRV41ForCsharp_net_framework")]
-[assembly: AssemblyDescription("腾讯云OCR表格识别应用程序 - .NET Framework 4.7.2 版本")]
+[assembly: AssemblyDescription("腾讯云OCR表格识别工具 - .NET Framework版本")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("")]
 [assembly: AssemblyProduct("table_OCRV41ForCsharp_net_framework")]
