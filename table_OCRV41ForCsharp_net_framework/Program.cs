@@ -10,6 +10,8 @@ using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using NPOI.XWPF.UserModel;
 using NPOI.OpenXmlFormats.Wordprocessing;
+using NLog;
+using NLog.Extensions.Logging;
 using table_OCRV41ForCsharp_net_framework.Interfaces;
 using table_OCRV41ForCsharp_net_framework.Models;
 using table_OCRV41ForCsharp_net_framework.Services;
@@ -26,6 +28,10 @@ namespace table_OCRV41ForCsharp_net_framework
         {
             try
             {
+                // 初始化 NLog 配置
+                var nlogConfig = new NLog.Config.XmlLoggingConfiguration("nlog.config");
+                LogManager.Configuration = nlogConfig;
+                
                 // 配置服务
                 ConfigureServices();
                 logger = serviceProvider.GetService<ILogger<Program>>();
@@ -81,11 +87,12 @@ namespace table_OCRV41ForCsharp_net_framework
         {
             var services = new ServiceCollection();
 
-            // 配置日志
+            // 配置日志 - 使用 NLog
             services.AddLogging(builder =>
             {
-                builder.AddConsole();
-                builder.SetMinimumLevel(LogLevel.Information);
+                builder.ClearProviders();
+                builder.AddNLog();
+                builder.SetMinimumLevel(Microsoft.Extensions.Logging.LogLevel.Information);
             });
 
             // 注册服务
@@ -108,15 +115,51 @@ namespace table_OCRV41ForCsharp_net_framework
             {
                 logger.LogInformation("开始从JSON文件处理数据");
 
-                string[] jsonFiles = Directory.GetFiles(pathMessage.DataFilePath, "*.json");
-                if (jsonFiles.Length == 0)
+                List<string> jsonFiles = new List<string>();
+                
+                // 直接打开文件选择对话框
+                try
                 {
-                    Console.WriteLine("未找到JSON文件，请先进行OCR识别。");
+                    logger.LogInformation("打开文件选择对话框");
+                    OpenFileDialog fileDialog = new OpenFileDialog
+                    {
+                        Multiselect = true,
+                        Title = "请选择文件",
+                        Filter = "json文件(*.json)|*.json"
+                    };
+
+                    DialogResult result = fileDialog.ShowDialog();
+                    if (result == DialogResult.OK)
+                    {
+                        jsonFiles.AddRange(fileDialog.FileNames);
+                        foreach (string fileName in fileDialog.FileNames)
+                        {
+                            logger.LogInformation($"选择文件: {fileName}");
+                        }
+                    }
+                    else
+                    {
+                        logger.LogWarning("用户取消了文件选择");
+                        Console.WriteLine("未选择文件，程序退出。");
+                        Console.ReadKey();
+                        return;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    logger.LogError(ex, "打开文件选择对话框时出错");
+                    MessageBox.Show($"选择文件时出错: {ex.Message}", "错误", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    return;
+                }
+
+                if (jsonFiles.Count == 0)
+                {
+                    Console.WriteLine("没有找到或选择JSON文件，程序退出。");
                     Console.ReadKey();
                     return;
                 }
 
-                Console.WriteLine($"找到 {jsonFiles.Length} 个JSON文件");
+                Console.WriteLine($"找到 {jsonFiles.Count} 个JSON文件");
                 string workPath = pathMessage.FolderPath;
 
                 foreach (string jsonPath in jsonFiles)
@@ -127,11 +170,12 @@ namespace table_OCRV41ForCsharp_net_framework
                         Console.WriteLine($"正在处理: {Path.GetFileName(jsonPath)}");
 
                         string jsonContent = File.ReadAllText(jsonPath, Encoding.UTF8);
-                        var resultForJsonMessage = JsonConvert.DeserializeObject<OcrResult>(jsonContent);
+                        var tencentOcrParser = serviceProvider.GetService<TencentOcrParser>();
+                        var resultForJsonMessage = tencentOcrParser.Parse(jsonContent);
 
                         if (resultForJsonMessage == null)
                         {
-                            logger.LogWarning($"JSON文件 {jsonPath} 反序列化失败");
+                            logger.LogWarning($"JSON文件 {jsonPath} 解析失败");
                             continue;
                         }
 
@@ -497,7 +541,7 @@ namespace table_OCRV41ForCsharp_net_framework
 
             try
             {
-                paragraphsRec[2].CreateRun().SetText(resultForJsonMessage.JianyanOrjiance.Equals("检验") ? "D" : "E");
+                paragraphsRec[2].CreateRun().SetText(resultForJsonMessage.JianyanOrjiance?.Equals("检验") == true ? "D" : "E");
                 paragraphsRec[2].CreateRun().SetText(resultForJsonMessage.ReportNum);
                 paragraphsRec[2].Alignment = ParagraphAlignment.RIGHT;
             }
@@ -614,6 +658,17 @@ namespace table_OCRV41ForCsharp_net_framework
 
             try
             {
+                tableRep0.GetRow(7).GetCell(4).SetText(resultForJsonMessage.XiansuqiNum);
+                tableRep0.GetRow(7).GetCell(4).Paragraphs[0].Alignment = ParagraphAlignment.LEFT;
+            }
+            catch
+            {
+                Console.WriteLine("XiansuqiNum write error");
+            }
+
+
+            try
+            {
                 tableRep0.GetRow(8).GetCell(4).SetText(resultForJsonMessage.XiansuqiDirection);
                 tableRep0.GetRow(8).GetCell(4).Paragraphs[0].Alignment = ParagraphAlignment.LEFT;
             }
@@ -694,7 +749,7 @@ namespace table_OCRV41ForCsharp_net_framework
 
             try
             {
-                paragraphsRep[3].CreateRun().SetText(resultForJsonMessage.JianyanOrjiance.Equals("检验") ? "D" : "E");
+                paragraphsRep[3].CreateRun().SetText(resultForJsonMessage.JianyanOrjiance?.Equals("检验") == true ? "D" : "E");
                 paragraphsRep[3].CreateRun().SetText(resultForJsonMessage.ReportNum);
                 paragraphsRep[3].Alignment = ParagraphAlignment.RIGHT;
 
@@ -733,7 +788,7 @@ namespace table_OCRV41ForCsharp_net_framework
                 }
                 newRun.SetText(resultForJsonMessage.Date);
 
-                paragraphsRep[53].CreateRun().SetText(resultForJsonMessage.JianyanOrjiance.Equals("检验") ? "D" : "E");
+                paragraphsRep[53].CreateRun().SetText(resultForJsonMessage.JianyanOrjiance?.Equals("检验") == true ? "D" : "E");
                 paragraphsRep[53].CreateRun().SetText(resultForJsonMessage.ReportNum);
                 paragraphsRep[53].Alignment = ParagraphAlignment.RIGHT;
             }
@@ -747,7 +802,7 @@ namespace table_OCRV41ForCsharp_net_framework
         /// 显示程序启动欢迎界面
         /// </summary>
         private static void DisplayWelcomeScreen()
-        {
+         {
             Console.Clear();
             Console.ForegroundColor = ConsoleColor.Cyan;
             Console.WriteLine("╔══════════════════════════════════════════════════════════════╗");

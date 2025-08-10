@@ -55,7 +55,7 @@ namespace table_OCRV41ForCsharp_net_framework.Services
                 {
                     try
                     {
-                        var result = DoRequest(key.SecretId, key.SecretKey, _service, _version, _action, body, _region, token);
+                        var result = DoRequest(key.API_KEY, key.SECRET_KEY, _service, _version, _action, body, _region, token);
                         return result;
                     }
                     catch (Exception ex)

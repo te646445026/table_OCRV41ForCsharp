@@ -23,11 +23,16 @@
     <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="3.1.32" />
     <PackageReference Include="Microsoft.Extensions.Logging" Version="3.1.32" />
     <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="3.1.32" />
+    <PackageReference Include="NLog" Version="5.2.8" />
+    <PackageReference Include="NLog.Extensions.Logging" Version="5.3.8" />
     <PackageReference Include="Nager.Date" Version="2.8.3" />
   </ItemGroup>
 
   <ItemGroup>
     <None Include="App.config" />
+    <None Include="nlog.config">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
 
 </Project>

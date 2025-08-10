@@ -18,17 +18,17 @@ namespace table_OCRV41ForCsharp_net_framework.Services
             {
                 MessageBox.Show("密钥文件缺失,点击确认后手动输入");
 
-                Console.WriteLine("请输入SecretId");
+                Console.WriteLine("请输入API_KEY");
                 do
                 {
-                    myKey.SecretId = Console.ReadLine();
-                } while (myKey.SecretId == null);
+                    myKey.API_KEY = Console.ReadLine();
+                } while (myKey.API_KEY == null);
 
-                Console.WriteLine("请输入SecretKey");
+                Console.WriteLine("请输入SECRET_KEY");
                 do
                 {
-                    myKey.SecretKey = Console.ReadLine();
-                } while (myKey.SecretKey == null);
+                    myKey.SECRET_KEY = Console.ReadLine();
+            } while (myKey.SECRET_KEY == null);
 
                 string keyJson = JsonConvert.SerializeObject(myKey);
 

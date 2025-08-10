@@ -662,6 +662,17 @@ namespace table_OCRV41ForCsharp_net
 
                             try
                             {
+                                tableRep0.GetRow(7).GetCell(4).SetText(resultForJsonMessage.XiansuqiNum);
+                                //左对齐
+                                tableRep0.GetRow(7).GetCell(4).Paragraphs[0].Alignment = ParagraphAlignment.LEFT;
+                            }
+                            catch
+                            {
+                                Console.WriteLine("XiansuqiNum write error");
+                            }
+
+                            try
+                            {
                                 tableRep0.GetRow(8).GetCell(4).SetText(resultForJsonMessage.XiansuqiDirection);
                                 //左对齐
                                 tableRep0.GetRow(8).GetCell(4).Paragraphs[0].Alignment = ParagraphAlignment.LEFT;
