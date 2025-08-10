@@ -1,4 +1,6 @@
-namespace table_OCRV41ForCsharp_net;
+using table_OCRV41ForCsharp_net.Interfaces;
+
+namespace table_OCRV41ForCsharp_net.Services;
 
 public class GetFileContentAsBase64Service:IGetFileContentAsBase64Service
 {

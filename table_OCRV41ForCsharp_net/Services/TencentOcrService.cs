@@ -1,8 +1,10 @@
 using System.Net.Http.Headers;
 using System.Security.Cryptography;
 using System.Text;
+using table_OCRV41ForCsharp_net.Interfaces;
+using table_OCRV41ForCsharp_net.Exceptions;
 
-namespace table_OCRV41ForCsharp_net;
+namespace table_OCRV41ForCsharp_net.Services;
 
 public class TencentOcrService : IOcrService
 {

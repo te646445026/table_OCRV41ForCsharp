@@ -1,6 +1,8 @@
-﻿using Newtonsoft.Json;
+using Newtonsoft.Json;
+using table_OCRV41ForCsharp_net.Interfaces;
+using table_OCRV41ForCsharp_net.Models;
 
-namespace table_OCRV41ForCsharp_net;
+namespace table_OCRV41ForCsharp_net.Services;
 
 // 定义路径服务
 /**

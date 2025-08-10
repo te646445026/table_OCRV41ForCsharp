@@ -4,7 +4,7 @@ using System.Net.Http;
 using System.Text.Json;
 using System.Threading.Tasks;
 
-namespace table_OCRV41ForCsharp_net
+namespace table_OCRV41ForCsharp_net.Services
 {
     public class HolidayService
     {

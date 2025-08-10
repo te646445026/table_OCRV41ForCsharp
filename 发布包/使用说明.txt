@@ -1,0 +1,37 @@
+电梯限速器检测报告生成系统 - 快速使用指南
+========================================
+
+📋 系统要求：
+- Windows 7 SP1 或更高版本
+- .NET Framework 4.7.2 或更高版本
+- 网络连接（访问腾讯云OCR API）
+
+🚀 快速开始：
+
+1. 配置API密钥
+   - 打开 key.json 文件
+   - 填入您的腾讯云OCR API密钥：
+     {
+       "SecretId": "您的SecretId",
+       "SecretKey": "您的SecretKey"
+     }
+
+2. 运行程序
+   - 双击 table_OCRV41ForCsharp_net_framework_standalone.exe
+   - 按照程序界面提示操作
+
+📁 文件说明：
+- table_OCRV41ForCsharp_net_framework_standalone.exe - 主程序（单文件版本）
+- key.json - API密钥配置（必须配置）
+- default.json - 默认配置文件
+- nlog.config - 日志配置文件
+- README.md - 详细说明文档
+- LOGGING_GUIDE.md - 日志功能指南
+
+🔧 常见问题：
+- 程序无法启动：请安装 .NET Framework 4.7.2
+- OCR识别失败：检查网络连接和API密钥配置
+- 查看日志：程序会在运行目录生成 logs 文件夹
+
+📞 技术支持：
+如有问题，请查看 README.md 获取详细信息。

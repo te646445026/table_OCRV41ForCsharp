@@ -1,6 +1,6 @@
 using System;
 
-namespace table_OCRV41ForCsharp_net
+namespace table_OCRV41ForCsharp_net.Exceptions
 {
     /// <summary>
     /// OCR服务异常类

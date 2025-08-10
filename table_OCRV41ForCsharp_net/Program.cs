@@ -4,8 +4,17 @@ using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using NLog;
+using NLog.Extensions.Logging;
 using NPOI.XWPF.UserModel;
+using table_OCRV41ForCsharp_net.Interfaces;
+using table_OCRV41ForCsharp_net.Models;
+using table_OCRV41ForCsharp_net.Services;
+using table_OCRV41ForCsharp_net.Exceptions;
+using ILogger = Microsoft.Extensions.Logging.ILogger;
 
 namespace table_OCRV41ForCsharp_net
 {
@@ -46,7 +55,25 @@ namespace table_OCRV41ForCsharp_net
 
         private static void ConfigureServices(IServiceCollection services)
         {
+            // 配置 NLog
+            LogManager.LoadConfiguration("nlog.config");
             
+            // 添加日志服务
+            services.AddLogging(builder =>
+            {
+                builder.ClearProviders();
+                builder.SetMinimumLevel(Microsoft.Extensions.Logging.LogLevel.Debug);
+                builder.AddNLog();
+            });
+            
+            // 添加配置服务
+            var configuration = new ConfigurationBuilder()
+                .SetBasePath(Directory.GetCurrentDirectory())
+                .AddJsonFile("default.json", optional: true, reloadOnChange: true)
+                .Build();
+            services.AddSingleton<IConfiguration>(configuration);
+            
+            // 注册业务服务
             services.AddSingleton<IPathService, PathService>();
             services.AddSingleton<IKeyService, KeyService>();
             services.AddSingleton<IGetFileContentAsBase64Service, GetFileContentAsBase64Service>();
@@ -60,31 +87,22 @@ namespace table_OCRV41ForCsharp_net
                 var secretKey = keyService.CheckKey().SECRET_KEY;
                 return new TencentOcrService(secretId, secretKey);
             });
-
-
         }
 
         /// <summary>
         /// 初始化全局异常处理
         /// </summary>
-        private static void InitializeExceptionHandler()
+        /// <param name="logger">日志记录器</param>
+        private static void InitializeExceptionHandler(ILogger<Program> logger)
         {
             AppDomain.CurrentDomain.UnhandledException += (sender, args) =>
             {
-                LogUnhandledException((Exception)args.ExceptionObject);
+                var exception = (Exception)args.ExceptionObject;
+                logger?.LogCritical(exception, "程序遇到了未处理的异常");
                 MessageBox.Show("程序遇到了未处理的异常，请查看日志文件获取详细信息。", "错误", MessageBoxButtons.OK, MessageBoxIcon.Error);
             };
         }
-        
-        /// <summary>
-        /// 记录未处理的异常
-        /// </summary>
-        /// <param name="ex">异常对象</param>
-        private static void LogUnhandledException(Exception ex)
-        {
-            string logPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "error.log");
-            File.AppendAllText(logPath, $"[{DateTime.Now}] {ex.GetType().Name}: {ex.Message}\r\n{ex.StackTrace}\r\n\r\n");
-        }
+
         
         /// <summary>
         /// 使用重试机制执行操作
@@ -127,19 +145,21 @@ namespace table_OCRV41ForCsharp_net
         /// <param name="serviceProvider">服务提供者</param>
         private static void Process(IServiceProvider serviceProvider)
         {
-            // 初始化异常处理
-            InitializeExceptionHandler();
+            // 获取日志记录器
+            var logger = serviceProvider.GetService<ILogger<Program>>();
             
-            // 初始化日志记录器
-            var logFilePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "app.log");
-            using var logger = new FileLogger(logFilePath);
+            // 初始化异常处理
+            InitializeExceptionHandler(logger);
 
             try
             {
-                logger.Log(LogLevel.Info, "应用程序启动");
+                logger?.LogInformation("应用程序启动");
                 
                 // 显示程序启动界面
                 DisplayWelcomeScreen();
+                
+                // 显示主菜单并获取用户选择
+                var userChoice = DisplayMainMenuAndGetChoice(logger);
 
                 string? workPath;
                 string dataDir = "";
@@ -160,31 +180,26 @@ namespace table_OCRV41ForCsharp_net
 
                 try
                 {
-                    logger.Log(LogLevel.Info, "检查默认路径");
+                    logger?.LogInformation("检查默认路径");
                     PathMessage path = pathService.CheckDefaultPath();
                     workPath = path.FolderPath;
-                    logger.Log(LogLevel.Info, $"工作路径: {workPath}");
+                    logger?.LogInformation("工作路径: {WorkPath}", workPath);
 
-                    // 显示选择菜单
-                    DisplayMainMenu();
-                    string? situation = Console.ReadLine();
-                    logger.Log(LogLevel.Info, $"用户选择: {situation}");
-
-                    if (situation == "1")
+                    if (userChoice == "1")
                     {
                         //从json文件中读取
-                        logger.Log(LogLevel.Info, "从JSON文件中读取数据");
+                        logger?.LogInformation("从JSON文件中读取数据");
                         dataDir = path.DataFilePath + "\\";
                         folderDir = path.DataJsonFilePath + "\\";
 
-                        logger.Log(LogLevel.Info, $"数据目录: {dataDir}");
-                        logger.Log(LogLevel.Info, $"JSON文件目录: {folderDir}");
+                        logger?.LogInformation("数据目录: {DataDir}", dataDir);
+                        logger?.LogInformation("JSON文件目录: {FolderDir}", folderDir);
                     }
                     else
                     {
                         try
                         {
-                            logger.Log(LogLevel.Info, "打开文件选择对话框");
+                            logger?.LogInformation("打开文件选择对话框");
                             // 创建 OpenFileDialog 对象
                             OpenFileDialog fileDialog = new OpenFileDialog();
 
@@ -200,26 +215,26 @@ namespace table_OCRV41ForCsharp_net
                                 foreach (string fileName in fileDialog.FileNames)
                                 {
                                     resultDir.Add(fileName); // 获取用户选择的多个文件名的数组
-                                    logger.Log(LogLevel.Info, $"选择文件: {fileName}");
+                                    logger?.LogInformation("选择文件: {FileName}", fileName);
                                 }
                             }
                             else
                             {
-                                logger.Log(LogLevel.Warning, "用户取消了文件选择");
+                                logger?.LogWarning("用户取消了文件选择");
                             }
                         }
                         catch (Exception ex)
                         {
-                            logger.Log(LogLevel.Error, "打开文件选择对话框时出错", ex);
+                            logger?.LogError(ex, "打开文件选择对话框时出错");
                             MessageBox.Show($"选择文件时出错: {ex.Message}", "错误", MessageBoxButtons.OK, MessageBoxIcon.Error);
                         }
                     }
 
-                    if (situation == "1")
+                    if (userChoice == "1")
                     {
                         try
                         {
-                            logger.Log(LogLevel.Info, "开始处理图片文件");
+                            logger?.LogInformation("开始处理图片文件");
                             int num = 0;
                             DirectoryInfo directoryInfo = new DirectoryInfo(dataDir);
 
@@ -232,7 +247,7 @@ namespace table_OCRV41ForCsharp_net
                             {
                                 try
                                 {
-                                    logger.Log(LogLevel.Info, $"处理文件: {file.Name}");
+                                    logger?.LogInformation("处理文件: {FileName}", file.Name);
                                     Console.WriteLine("{0}: {1} 正在处理：", num + 1, file.Name.Split('.')[0]);
 
                                     string imageBase64 = getFileContentAsBase64Service.GetFileContentAsBase64(file.FullName);
@@ -240,7 +255,7 @@ namespace table_OCRV41ForCsharp_net
                                     string jsonFile_name = folderDir + file.Name.Split('.')[0] + ".json";
 
                                     File.WriteAllText(jsonFile_name, data_json);
-                                    logger.Log(LogLevel.Info, $"文件处理完成: {jsonFile_name}");
+                                    logger?.LogInformation("文件处理完成: {JsonFileName}", jsonFile_name);
 
                                     Console.WriteLine("{0}: {1} 下载完成。", num + 1, jsonFile_name);
                                     num++;
@@ -250,51 +265,51 @@ namespace table_OCRV41ForCsharp_net
                                 }
                                 catch (Exception ex)
                                 {
-                                    logger.Log(LogLevel.Error, $"处理文件 {file.Name} 时出错", ex);
+                                    logger?.LogError(ex, "处理文件 {FileName} 时出错", file.Name);
                                     Console.WriteLine($"处理文件 {file.Name} 时出错: {ex.Message}");
                                 }
                             }
                         }
                         catch (Exception ex)
                         {
-                            logger.Log(LogLevel.Error, "处理图片文件时出错", ex);
+                            logger?.LogError(ex, "处理图片文件时出错");
                             MessageBox.Show($"处理图片文件时出错: {ex.Message}", "错误", MessageBoxButtons.OK, MessageBoxIcon.Error);
                         }
                     }
 
-                    if (situation == "1")
+                    if (userChoice == "1")
                     {
                         try
                         {
-                            logger.Log(LogLevel.Info, $"从目录加载JSON文件: {folderDir}");
+                            logger?.LogInformation("从目录加载JSON文件: {FolderDir}", folderDir);
                             string[] file_dir = Directory.GetFiles(folderDir);
                             for (int i = 0; i < file_dir.Length; i++)
                             {
                                 resultDir.Add(file_dir[i]);
-                                logger.Log(LogLevel.Info, $"添加JSON文件: {file_dir[i]}");
+                                logger?.LogInformation("添加JSON文件: {FilePath}", file_dir[i]);
                             }
                         }
                         catch (Exception ex)
                         {
-                            logger.Log(LogLevel.Error, "加载JSON文件时出错", ex);
+                            logger?.LogError(ex, "加载JSON文件时出错");
                             MessageBox.Show($"加载JSON文件时出错: {ex.Message}", "错误", MessageBoxButtons.OK, MessageBoxIcon.Error);
                         }
                     }
                     int fileNum = 0;
-                    logger.Log(LogLevel.Info, $"开始处理JSON文件，共 {resultDir.Count} 个文件");
+                    logger?.LogInformation("开始处理JSON文件，共 {FileCount} 个文件", resultDir.Count);
 
                     foreach (string jsonPath in resultDir)
                     {
                         try
                         {
                             fileNum++;
-                            logger.Log(LogLevel.Info, $"处理JSON文件 {fileNum}/{resultDir.Count}: {jsonPath}");
+                            logger?.LogInformation("处理JSON文件 {FileNum}/{TotalCount}: {JsonPath}", fileNum, resultDir.Count, jsonPath);
                             Console.WriteLine("-----------{0}-------------", fileNum);
 
                             // 把识别结果的json文档信息提取出来
                             string json = File.ReadAllText(jsonPath);
                             resultForJsonMessage = ocrParser.Parse(json);
-                            logger.Log(LogLevel.Info, $"成功解析JSON文件: {Path.GetFileName(jsonPath)}");
+                            logger?.LogInformation("成功解析JSON文件: {FileName}", Path.GetFileName(jsonPath));
 
                             // 根据模板，写入对应的word文档里面
                             string recordTemplatePath = workPath + "\\限速器测试记录模板4.docx";
@@ -305,7 +320,7 @@ namespace table_OCRV41ForCsharp_net
                                 throw new FileNotFoundException("模板文件不存在", !File.Exists(recordTemplatePath) ? recordTemplatePath : reportTemplatePath);
                             }
 
-                            logger.Log(LogLevel.Info, "打开Word模板文件");
+                            logger?.LogInformation("打开Word模板文件");
                             FileStream docFlieRec = new FileStream(recordTemplatePath, FileMode.OpenOrCreate, FileAccess.ReadWrite);
                             FileStream docFlieRep = new FileStream(reportTemplatePath, FileMode.OpenOrCreate, FileAccess.ReadWrite);
 
@@ -327,7 +342,7 @@ namespace table_OCRV41ForCsharp_net
                             XWPFTable tableRep0 = tablesRep[0];
                             XWPFTable tableRep1 = tablesRep[1];
 
-                            logger.Log(LogLevel.Info, "开始填充Word文档内容");
+                            logger?.LogInformation("开始填充Word文档内容");
 
                             //写入记录for模板3
                             try
@@ -338,7 +353,7 @@ namespace table_OCRV41ForCsharp_net
                             }
                             catch (Exception ex)
                             {
-                                logger.Log(LogLevel.Warning, "设置委托单位时出错", ex);
+                                logger?.LogWarning(ex, "设置委托单位时出错");
                                 Console.WriteLine("userName write error");
                             }
 
@@ -350,7 +365,7 @@ namespace table_OCRV41ForCsharp_net
                             }
                             catch (Exception ex)
                             {
-                                logger.Log(LogLevel.Warning, "设置使用单位时出错", ex);
+                                logger?.LogWarning(ex, "设置使用单位时出错");
                                 Console.WriteLine("userName write error");
                             }
 
@@ -817,7 +832,7 @@ namespace table_OCRV41ForCsharp_net
 
                             // 保存报告文件
                             string outPath2 = string.Format(workPath + "\\{0}.docx", resultForJsonMessage.DeviceCode);
-                            logger.Log(LogLevel.Info, $"保存报告文件: {outPath2}");
+                            logger?.LogInformation("保存报告文件: {OutPath}", outPath2);
                             FileStream outFile2 = new FileStream(outPath2, FileMode.OpenOrCreate, FileAccess.ReadWrite);
                             documentRep.Write(outFile2);
                             outFile2.Close();
@@ -830,12 +845,12 @@ namespace table_OCRV41ForCsharp_net
                         }
                         catch (Exception ex)
                         {
-                            logger.Log(LogLevel.Error, $"处理JSON文件 {jsonPath} 时出错", ex);
+                            logger?.LogError(ex, "处理JSON文件 {JsonPath} 时出错", jsonPath);
                             MessageBox.Show($"处理文件时出错: {ex.Message}", "错误", MessageBoxButtons.OK, MessageBoxIcon.Error);
                         }
                     }
 
-                    logger.Log(LogLevel.Info, "所有文件处理完成");
+                    logger?.LogInformation("所有文件处理完成");
                     Console.WriteLine();
                     Console.ForegroundColor = ConsoleColor.Green;
                     Console.WriteLine("🎉 处理完成！按任意键退出程序");
@@ -844,12 +859,12 @@ namespace table_OCRV41ForCsharp_net
                 }
                 catch (Exception ex)
                 {
-                    logger.Log(LogLevel.Error, "程序执行过程中发生错误", ex);
+                    logger?.LogError(ex, "程序执行过程中发生错误");
                     MessageBox.Show($"程序执行过程中发生错误: {ex.Message}", "错误", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 }
                 finally
                 {
-                    logger.Log(LogLevel.Info, "应用程序结束");
+                    logger?.LogInformation("应用程序结束");
                 }
             }
             finally{}
@@ -893,6 +908,35 @@ namespace table_OCRV41ForCsharp_net
             Console.WriteLine("🖼️ [1] 上传图片进行OCR识别");
             Console.WriteLine();
             Console.Write("请输入您的选择 [0/1]: ");
+        }
+        
+        /// <summary>
+        /// 显示主菜单并获取用户选择
+        /// </summary>
+        /// <param name="logger">日志记录器</param>
+        /// <returns>用户选择的选项</returns>
+        private static string DisplayMainMenuAndGetChoice(ILogger<Program> logger)
+        {
+            string userChoice;
+            while (true)
+            {
+                DisplayMainMenu();
+                userChoice = Console.ReadLine()?.Trim();
+                
+                if (userChoice == "0" || userChoice == "1")
+                {
+                    logger?.LogInformation("用户选择了选项: {UserChoice}", userChoice);
+                    break;
+                }
+                
+                Console.ForegroundColor = ConsoleColor.Red;
+                Console.WriteLine("❌ 无效的选择！请输入 0 或 1");
+                Console.ResetColor();
+                Console.WriteLine();
+                logger?.LogWarning("用户输入了无效选择: {InvalidChoice}", userChoice);
+            }
+            
+            return userChoice;
         }
     }
 }

@@ -1,4 +1,4 @@
-﻿namespace table_OCRV41ForCsharp_net;
+namespace table_OCRV41ForCsharp_net.Models;
 
 public class PathMessage
 {

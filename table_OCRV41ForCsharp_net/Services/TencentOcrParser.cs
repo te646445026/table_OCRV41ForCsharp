@@ -1,8 +1,10 @@
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Newtonsoft.Json.Linq;
+using table_OCRV41ForCsharp_net.Interfaces;
+using table_OCRV41ForCsharp_net.Models;
 
-namespace table_OCRV41ForCsharp_net;
+namespace table_OCRV41ForCsharp_net.Services;
 
 public class TencentOcrParser:IOcrParser
 {
