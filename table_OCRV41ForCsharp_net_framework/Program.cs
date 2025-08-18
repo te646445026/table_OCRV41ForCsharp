@@ -1,10 +1,13 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
@@ -45,7 +48,7 @@ namespace table_OCRV41ForCsharp_net_framework
                 var pathMessage = pathService.CheckDefaultPath();
 
                 // 检查密钥
-                var keyService = serviceProvider.GetService<KeyService>();
+                var keyService = serviceProvider.GetService<IKeyService>();
                 var key = keyService.CheckKey();
 
                 // 显示主菜单
@@ -53,15 +56,15 @@ namespace table_OCRV41ForCsharp_net_framework
                 string choice = Console.ReadLine();
 
                 if (choice == "0")
-                {
-                    // 从JSON文件读取数据
-                    ProcessFromJsonFiles(pathMessage);
-                }
-                else if (choice == "1")
-                {
-                    // OCR识别模式
-                    ProcessFromOcrImages(pathMessage, key);
-                }
+                    {
+                        // 从JSON文件读取数据
+                        ProcessFromJsonFiles(pathMessage);
+                    }
+                    else if (choice == "1")
+                    {
+                        // OCR识别模式
+                        ProcessFromOcrImages(serviceProvider);
+                    }
                 else
                 {
                     Console.WriteLine("无效的选择，程序退出。");
@@ -87,23 +90,55 @@ namespace table_OCRV41ForCsharp_net_framework
         {
             var services = new ServiceCollection();
 
+            // 配置 NLog
+            LogManager.LoadConfiguration("nlog.config");
+            
             // 配置日志 - 使用 NLog
             services.AddLogging(builder =>
             {
                 builder.ClearProviders();
-                builder.AddNLog();
                 builder.SetMinimumLevel(Microsoft.Extensions.Logging.LogLevel.Information);
+                builder.AddNLog();
             });
-
-            // 注册服务
+            
+            // 添加配置服务
+            var configuration = new ConfigurationBuilder()
+                .SetBasePath(Directory.GetCurrentDirectory())
+                .AddJsonFile("default.json", optional: true, reloadOnChange: true)
+                .Build();
+            services.AddSingleton<IConfiguration>(configuration);
+            
+            // 注册业务服务
             services.AddSingleton<IPathService, PathService>();
-            services.AddSingleton<KeyService>();
-            services.AddSingleton<GetFileContentAsBase64Service>();
-            services.AddSingleton<TencentOcrParser>();
-            services.AddSingleton<TencentOcrService>();
+            services.AddSingleton<IKeyService, KeyService>();
+            services.AddSingleton<IGetFileContentAsBase64Service, GetFileContentAsBase64Service>();
+            services.AddSingleton<IOcrParser, TencentOcrParser>();
+
+            // 使用工厂模式注册 TencentOcrService
+            services.AddSingleton<IOcrService>(provider =>
+            {
+                var keyService = provider.GetService<IKeyService>();
+                var secretId = keyService.CheckKey().API_KEY;
+                var secretKey = keyService.CheckKey().SECRET_KEY;
+                return new TencentOcrService(secretId, secretKey);
+            });
             services.AddSingleton<HolidayService>();
 
             serviceProvider = services.BuildServiceProvider();
+        }
+
+        /// <summary>
+        /// 初始化全局异常处理
+        /// </summary>
+        /// <param name="logger">日志记录器</param>
+        private static void InitializeExceptionHandler(ILogger<Program> logger)
+        {
+            AppDomain.CurrentDomain.UnhandledException += (sender, args) =>
+            {
+                var exception = (Exception)args.ExceptionObject;
+                logger?.LogCritical(exception, "程序遇到了未处理的异常");
+                MessageBox.Show("程序遇到了未处理的异常，请查看日志文件获取详细信息。", "错误", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            };
         }
 
         /// <summary>
@@ -111,6 +146,12 @@ namespace table_OCRV41ForCsharp_net_framework
         /// </summary>
         private static void ProcessFromJsonFiles(PathMessage pathMessage)
         {
+            // 获取日志记录器
+            var logger = serviceProvider.GetService<ILogger<Program>>();
+            
+            // 初始化异常处理
+            InitializeExceptionHandler(logger);
+
             try
             {
                 logger.LogInformation("开始从JSON文件处理数据");
@@ -170,8 +211,8 @@ namespace table_OCRV41ForCsharp_net_framework
                         Console.WriteLine($"正在处理: {Path.GetFileName(jsonPath)}");
 
                         string jsonContent = File.ReadAllText(jsonPath, Encoding.UTF8);
-                        var tencentOcrParser = serviceProvider.GetService<TencentOcrParser>();
-                        var resultForJsonMessage = tencentOcrParser.Parse(jsonContent);
+                        var ocrParser = serviceProvider.GetService<IOcrParser>();
+                        var resultForJsonMessage = ocrParser.Parse(jsonContent);
 
                         if (resultForJsonMessage == null)
                         {
@@ -204,82 +245,125 @@ namespace table_OCRV41ForCsharp_net_framework
         }
 
         /// <summary>
-        /// 从OCR图片处理数据
+        /// 从图片识别处理
         /// </summary>
-        private static void ProcessFromOcrImages(PathMessage pathMessage, KEY key)
+        /// <param name="serviceProvider">服务提供者</param>
+        private static void ProcessFromOcrImages(IServiceProvider serviceProvider)
         {
+            // 获取日志记录器
+            var logger = serviceProvider.GetService<ILogger<Program>>();
+            
+            // 初始化异常处理
+            InitializeExceptionHandler(logger);
+
             try
             {
-                logger.LogInformation("开始OCR图片识别处理");
-
-                var getFileContentAsBase64Service = serviceProvider.GetService<GetFileContentAsBase64Service>();
-                var tencentOcrService = serviceProvider.GetService<TencentOcrService>();
-                var tencentOcrParser = serviceProvider.GetService<TencentOcrParser>();
-
-                // 选择图片文件
-                OpenFileDialog openFileDialog = new OpenFileDialog
+                logger?.LogInformation("开始从图片识别处理");
+                
+                // 检查默认路径
+                var pathService = serviceProvider.GetService<IPathService>();
+                if (pathService == null)
                 {
-                    Title = "选择要识别的图片文件",
-                    Filter = "图片文件|*.jpg;*.jpeg;*.png;*.bmp;*.gif|所有文件|*.*",
-                    Multiselect = true
-                };
-
-                if (openFileDialog.ShowDialog() != DialogResult.OK)
+                    throw new Exception("无法获取路径服务");
+                }
+                
+                PathMessage path = pathService.CheckDefaultPath();
+                string workPath = path.FolderPath;
+                logger?.LogInformation("工作路径: {WorkPath}", workPath);
+                
+                string dataDir = path.DataFilePath + "\\";
+                string folderDir = path.DataJsonFilePath + "\\";
+                
+                logger?.LogInformation("数据目录: {DataDir}", dataDir);
+                logger?.LogInformation("JSON文件目录: {FolderDir}", folderDir);
+                
+                // 获取服务
+                var ocrService = serviceProvider.GetService<IOcrService>();
+                var getFileContentAsBase64Service = serviceProvider.GetService<IGetFileContentAsBase64Service>();
+                var ocrParser = serviceProvider.GetService<IOcrParser>();
+                
+                if (ocrService == null || getFileContentAsBase64Service == null || ocrParser == null)
                 {
-                    Console.WriteLine("未选择文件，程序退出。");
-                    return;
+                    throw new Exception("无法解析所需的服务");
+                }
+                
+                // 处理图片文件
+                logger?.LogInformation("开始处理图片文件");
+                int num = 0;
+                DirectoryInfo directoryInfo = new DirectoryInfo(dataDir);
+
+                if (!directoryInfo.Exists)
+                {
+                    throw new DirectoryNotFoundException($"目录不存在: {dataDir}");
                 }
 
-                string workPath = pathMessage.FolderPath;
-                string[] selectedFiles = openFileDialog.FileNames;
-
-                Console.WriteLine($"选择了 {selectedFiles.Length} 个文件进行处理");
-
-                foreach (string filePath in selectedFiles)
+                foreach (FileInfo file in directoryInfo.GetFiles())
                 {
                     try
                     {
-                        logger.LogInformation($"处理图片文件: {filePath}");
-                        Console.WriteLine($"正在处理: {Path.GetFileName(filePath)}");
+                        logger?.LogInformation("处理文件: {FileName}", file.Name);
+                        Console.WriteLine("{0}: {1} 正在处理：", num + 1, file.Name.Split('.')[0]);
 
-                        // 转换为Base64
-                        string base64Content = getFileContentAsBase64Service.GetFileContentAsBase64(filePath);
+                        // 获取KEY对象
+                        var keyService = serviceProvider.GetService<IKeyService>();
+                        var key = keyService.CheckKey();
+                        
+                        string imageBase64 = getFileContentAsBase64Service.GetFileContentAsBase64(file.FullName);
+                        string data_json = ocrService.RecognizeTable(imageBase64, key);
+                        string jsonFile_name = folderDir + file.Name.Split('.')[0] + ".json";
 
-                        // OCR识别
-                        string ocrResponse = tencentOcrService.RecognizeTable(base64Content, key);
+                        File.WriteAllText(jsonFile_name, data_json);
+                        logger?.LogInformation("文件处理完成: {JsonFileName}", jsonFile_name);
 
-                        // 解析OCR结果
-                        var ocrResult = tencentOcrParser.Parse(ocrResponse);
-
-                        // 保存JSON结果
-                        string jsonFileName = Path.GetFileNameWithoutExtension(filePath) + ".json";
-                        string jsonPath = Path.Combine(pathMessage.DataFilePath, jsonFileName);
-                        string jsonContent = JsonConvert.SerializeObject(ocrResult, Formatting.Indented);
-                        File.WriteAllText(jsonPath, jsonContent, Encoding.UTF8);
-
-                        logger.LogInformation($"OCR结果已保存到: {jsonPath}");
-
-                        // 生成Word文档
-                        GenerateWordDocuments(ocrResult, workPath, jsonPath);
+                        Console.WriteLine("{0}: {1} 下载完成。", num + 1, jsonFile_name);
+                        num++;
+                        Console.WriteLine("--------------------------------------");
+                        Console.WriteLine("");
+                        Thread.Sleep(1000);
                     }
                     catch (Exception ex)
                     {
-                        logger.LogError(ex, $"处理图片文件 {filePath} 时出错");
+                        logger?.LogError(ex, "处理文件 {FileName} 时出错", file.Name);
+                        Console.WriteLine($"处理文件 {file.Name} 时出错: {ex.Message}");
+                    }
+                }
+                
+                // 生成Word文档
+                string[] jsonFiles = Directory.GetFiles(folderDir, "*.json");
+                
+                foreach (string jsonPath in jsonFiles)
+                {
+                    try
+                    {
+                        logger.LogInformation($"处理JSON文件: {jsonPath}");
+                        Console.WriteLine($"正在处理: {Path.GetFileName(jsonPath)}");
+
+                        string jsonContent = File.ReadAllText(jsonPath, Encoding.UTF8);
+                        var resultForJsonMessage = ocrParser.Parse(jsonContent);
+
+                        if (resultForJsonMessage == null)
+                        {
+                            logger.LogWarning($"JSON文件 {jsonPath} 解析失败");
+                            continue;
+                        }
+
+                        // 生成Word文档
+                        GenerateWordDocuments(resultForJsonMessage, workPath, jsonPath);
+                    }
+                    catch (Exception ex)
+                    {
+                        logger.LogError(ex, $"处理JSON文件 {jsonPath} 时出错");
                         MessageBox.Show($"处理文件时出错: {ex.Message}", "错误", MessageBoxButtons.OK, MessageBoxIcon.Error);
                     }
                 }
-
-                logger.LogInformation("所有文件处理完成");
-                Console.WriteLine();
-                Console.ForegroundColor = ConsoleColor.Green;
-                Console.WriteLine("🎉 处理完成！按任意键退出程序");
-                Console.ResetColor();
-                Console.ReadKey();
+                
+                logger?.LogInformation("从图片识别处理完成");
+                Console.WriteLine("处理完成！");
             }
             catch (Exception ex)
             {
-                logger.LogError(ex, "OCR图片处理时发生错误");
-                throw;
+                logger?.LogError(ex, "从图片识别处理时出错");
+                MessageBox.Show($"处理过程中发生错误: {ex.Message}", "错误", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
 
@@ -753,6 +837,16 @@ namespace table_OCRV41ForCsharp_net_framework
                 paragraphsRep[3].CreateRun().SetText(resultForJsonMessage.ReportNum);
                 paragraphsRep[3].Alignment = ParagraphAlignment.RIGHT;
 
+
+                var baseLength = paragraphsRep[16].ParagraphText.Length;
+
+                // 调整paragraphsRep[15]的文本长度
+                string userNameText = resultForJsonMessage.UserName;
+                if (userNameText.Length < baseLength)
+                {
+                    userNameText = userNameText.PadRight(baseLength, ' ');
+                }
+
                 // 检查段落是否已有Run，如果有则复制格式
                 var newRun = paragraphsRep[15].CreateRun();
                 if (paragraphsRep[15].Runs.Count > 1)
@@ -761,7 +855,6 @@ namespace table_OCRV41ForCsharp_net_framework
                     // 复制字体格式
                     newRun.FontSize = existingRun.FontSize;
                     newRun.FontFamily = existingRun.FontFamily;
-                    newRun.IsBold = existingRun.IsBold;
                     newRun.IsItalic = existingRun.IsItalic;
                     newRun.Underline = UnderlinePatterns.Single;
                 }
@@ -769,7 +862,14 @@ namespace table_OCRV41ForCsharp_net_framework
                 {
                     newRun.Underline = UnderlinePatterns.Single; // 设置下划线
                 }
-                newRun.SetText(resultForJsonMessage.UserName);
+                newRun.SetText(userNameText);
+
+                // 调整paragraphsRep[17]的文本长度
+                string dateText = resultForJsonMessage.Date;
+                if (dateText.Length < baseLength)
+                {
+                    dateText = dateText.PadRight(baseLength, ' ');
+                }
 
                 newRun = paragraphsRep[17].CreateRun();
                 if (paragraphsRep[17].Runs.Count > 1)
@@ -778,7 +878,6 @@ namespace table_OCRV41ForCsharp_net_framework
                     // 复制字体格式
                     newRun.FontSize = existingRun.FontSize;
                     newRun.FontFamily = existingRun.FontFamily;
-                    newRun.IsBold = existingRun.IsBold;
                     newRun.IsItalic = existingRun.IsItalic;
                     newRun.Underline = UnderlinePatterns.Single;
                 }
@@ -786,7 +885,9 @@ namespace table_OCRV41ForCsharp_net_framework
                 {
                     newRun.Underline = UnderlinePatterns.Single; // 设置下划线
                 }
-                newRun.SetText(resultForJsonMessage.Date);
+                newRun.SetText(dateText);               
+
+
 
                 paragraphsRep[53].CreateRun().SetText(resultForJsonMessage.JianyanOrjiance?.Equals("检验") == true ? "D" : "E");
                 paragraphsRep[53].CreateRun().SetText(resultForJsonMessage.ReportNum);

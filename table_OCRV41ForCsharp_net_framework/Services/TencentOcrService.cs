@@ -14,8 +14,8 @@ namespace table_OCRV41ForCsharp_net_framework.Services
 {
     public class TencentOcrService : IOcrService
     {
-        private readonly string _secretId;
-        private readonly string _secretKey;
+        private string _secretId;
+        private string _secretKey;
         private readonly string _service;
         private readonly string _version;
         private readonly string _action;
@@ -35,15 +35,19 @@ namespace table_OCRV41ForCsharp_net_framework.Services
         /// <summary>
         /// 识别表格
         /// </summary>
-        /// <param name="base64Image">Base64编码的图片数据</param>
-        /// <param name="key">API密钥</param>
+        /// <param name="imageBase64">Base64编码的图片数据</param>
+        /// <param name="key">包含API密钥信息的对象</param>
         /// <returns>OCR识别结果</returns>
         /// <exception cref="OcrServiceException">OCR服务调用失败时抛出</exception>
-        public string RecognizeTable(string base64Image, KEY key)
+        public string RecognizeTable(string imageBase64, KEY key)
         {
             try
             {
-                var body = base64Image;
+                // 使用KEY对象中的密钥信息更新私有字段
+                _secretId = key.API_KEY;
+                _secretKey = key.SECRET_KEY;
+                
+                var body = imageBase64;
                 var token = "";
                 
                 // 使用重试机制执行请求
@@ -55,7 +59,7 @@ namespace table_OCRV41ForCsharp_net_framework.Services
                 {
                     try
                     {
-                        var result = DoRequest(key.API_KEY, key.SECRET_KEY, _service, _version, _action, body, _region, token);
+                        var result = DoRequest(_secretId, _secretKey, _service, _version, _action, body, _region, token);
                         return result;
                     }
                     catch (Exception ex)
