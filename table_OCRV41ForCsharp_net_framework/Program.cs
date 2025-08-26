@@ -844,7 +844,7 @@ namespace table_OCRV41ForCsharp_net_framework
                 string userNameText = resultForJsonMessage.UserName;
                 if (userNameText.Length < baseLength)
                 {
-                    userNameText = userNameText.PadRight(baseLength, ' ');
+                    userNameText = userNameText.PadRight(baseLength-2, ' ');
                 }
 
                 // 检查段落是否已有Run，如果有则复制格式
@@ -868,7 +868,7 @@ namespace table_OCRV41ForCsharp_net_framework
                 string dateText = resultForJsonMessage.Date;
                 if (dateText.Length < baseLength)
                 {
-                    dateText = dateText.PadRight(baseLength, ' ');
+                    dateText = dateText.PadRight(baseLength+6, ' ');
                 }
 
                 newRun = paragraphsRep[17].CreateRun();
