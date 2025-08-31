@@ -207,6 +207,7 @@ namespace table_OCRV41ForCsharp_net
                             fileDialog.Multiselect = true; // 允许多选文件
                             fileDialog.Title = "请选择文件"; // 设置对话框的标题
                             fileDialog.Filter = "json文件(*.json)|*.json"; // 设置对话框的文件过滤器
+                            fileDialog.InitialDirectory = path.DataJsonFilePath; // 设置初始目录
 
                             // 显示对话框并获取用户选择的文件路径
                             DialogResult result = fileDialog.ShowDialog();

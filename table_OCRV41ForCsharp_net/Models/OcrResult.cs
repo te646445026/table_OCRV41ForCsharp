@@ -11,6 +11,7 @@ public class OcrResult
     public string UsingAddress { get; set; }
     public string MaintenanceUnit { get; set; }
     public string Speed { get; set; }
+    public string RatedLoad { get; set; }
 
     public string ReportNum { get; set; }
     public string Date { get; set; }

@@ -73,7 +73,17 @@ public class TencentOcrParser:IOcrParser
             bool isContain;
             ObjsIndex("设备代码", objs, out indexj, out indexi, out isContain);
 
-            result.DeviceCode = objs["Response"]["TableDetections"][indexj]["Cells"][indexi + 1]["Text"].ToString().Replace("\n", "").Replace("\r", "");
+            result.DeviceCode = objs["Response"]["TableDetections"][indexj]["Cells"][indexi + 1]["Text"].ToString().Replace("\n", "").Replace("\r", "").Replace(" ", "");
+            
+            // 如果设备代码中包含其他文本（如"设备类别"），则只提取数字部分
+            if (result.DeviceCode.Length > 20 && Regex.IsMatch(result.DeviceCode, @"\d{20,}"))
+            {
+                Match match = Regex.Match(result.DeviceCode, @"\d{20,}");
+                if (match.Success)
+                {
+                    result.DeviceCode = match.Value;
+                }
+            }
 
             Console.WriteLine("设备代码: " + result.DeviceCode);
         }
@@ -90,7 +100,27 @@ public class TencentOcrParser:IOcrParser
             int indexi;
             bool isContain;
             ObjsIndex("产品型号", objs, out indexj, out indexi, out isContain);
-            result.Model = objs["Response"]["TableDetections"][indexj]["Cells"][indexi + 1]["Text"].ToString().Replace("\n", "").Replace("\r", "");
+            string modelText = objs["Response"]["TableDetections"][indexj]["Cells"][indexi + 1]["Text"].ToString().Replace("\n", "").Replace("\r", "");
+            
+            // 如果产品型号中包含其他文本（如"曳引驱动乘客电梯"），则提取产品型号部分
+            if (modelText.Contains("产品型号") || modelText.Contains("型号"))
+            {
+                // 尝试提取字母、数字、点和连字符组成的型号
+                Match match = Regex.Match(modelText, @"[A-Za-z0-9\-\.]+");
+                if (match.Success && match.Value.Length > 2) // 型号通常至少有3个字符
+                {
+                    result.Model = match.Value;
+                }
+                else
+                {
+                    result.Model = modelText.Replace("产品型号", "").Trim();
+                }
+            }
+            else
+            {
+                result.Model = modelText;
+            }
+            
             Console.WriteLine("产品型号: " + result.Model);
         }
         catch
@@ -106,7 +136,27 @@ public class TencentOcrParser:IOcrParser
             int indexi;
             bool isContain;
             ObjsIndex("产品编号", objs, out indexj, out indexi, out isContain);
-            result.SerialNum = objs["Response"]["TableDetections"][indexj]["Cells"][indexi + 1]["Text"].ToString().Replace("\n", "").Replace("\r", "");
+            string serialNumText = objs["Response"]["TableDetections"][indexj]["Cells"][indexi + 1]["Text"].ToString().Replace("\n", "").Replace("\r", "");
+            
+            // 如果产品编号中包含其他文本（如"2021\n产品编号"），则提取产品编号部分
+            if (serialNumText.Contains("产品编号") || serialNumText.Contains("编号"))
+            {
+                // 尝试提取数字、字母和连字符组成的编号
+                Match match = Regex.Match(serialNumText, @"[A-Za-z0-9\-]+");
+                if (match.Success && match.Value.Length > 1) // 编号通常至少有2个字符
+                {
+                    result.SerialNum = match.Value;
+                }
+                else
+                {
+                    result.SerialNum = serialNumText.Replace("产品编号", "").Replace("编号", "").Trim();
+                }
+            }
+            else
+            {
+                result.SerialNum = serialNumText;
+            }
+            
             Console.WriteLine("产品编号: " + result.SerialNum);
         }
         catch
@@ -186,16 +236,59 @@ public class TencentOcrParser:IOcrParser
             int indexi;
             bool isContain;
             ObjsIndex("额定速度", objs, out indexj, out indexi, out isContain);
-            result.Speed = objs["Response"]["TableDetections"][indexj]["Cells"][indexi + 1]["Text"].ToString().Replace("\n", "");
+            result.Speed = objs["Response"]["TableDetections"][indexj]["Cells"][indexi + 1]["Text"].ToString().Replace("\n", "").Replace("\r", "");
             string speed_pattern = @"(\d+(\.\d+)?)";
             var speedNeed = Regex.Matches(result.Speed, speed_pattern);
-            result.Speed = speedNeed[0].ToString();
+            if (speedNeed.Count > 0)
+            {
+                result.Speed = speedNeed[0].ToString();
+            }
+            else
+            {
+                result.Speed = "/";
+            }
             Console.WriteLine("速度：" + result.Speed);
         }
         catch
         {
             Console.WriteLine("速度获取错误");
             result.Speed = "/";
+        }
+        
+        //string ratedLoad;
+        try
+        {
+            int indexj;
+            int indexi;
+            bool isContain;
+            ObjsIndex("额定载重量", objs, out indexj, out indexi, out isContain);
+            string ratedLoadText = objs["Response"]["TableDetections"][indexj]["Cells"][indexi + 1]["Text"].ToString().Replace("\n", "").Replace("\r", "");
+            
+            // 如果额定载重量中包含其他文本（如"1050kg额定速度"），则提取额定载重量部分
+            if (ratedLoadText.Contains("额定速度") || ratedLoadText.Contains("kg") || ratedLoadText.Contains("载重量"))
+            {
+                // 尝试提取数字部分
+                Match match = Regex.Match(ratedLoadText, @"(\d+)");
+                if (match.Success)
+                {
+                    result.RatedLoad = match.Value + "kg";
+                }
+                else
+                {
+                    result.RatedLoad = ratedLoadText.Replace("额定速度", "").Replace("载重量", "").Trim();
+                }
+            }
+            else
+            {
+                result.RatedLoad = ratedLoadText;
+            }
+            
+            Console.WriteLine("额定载重量: " + result.RatedLoad);
+        }
+        catch
+        {
+            Console.WriteLine("额定载重量获取错误");
+            result.RatedLoad = "/";
         }
         
         // 温度、湿度、电压识别已移除
@@ -218,7 +311,7 @@ public class TencentOcrParser:IOcrParser
             bool isContain;
             ObjsIndex(jianyanOrjianceReportNum, objs, out indexj, out indexi, out isContain);
 
-            result.ReportNum = objs["Response"]["TableDetections"][indexj]["Cells"][indexi]["Text"].ToString();
+            result.ReportNum = objs["Response"]["TableDetections"][indexj]["Cells"][indexi]["Text"].ToString().Replace("\n", "").Replace("\r", "");
             //MatchCollection matchs = Regex.Matches(reportNum, @"^\d{8}");
             //reportNum2 = matchs[0].ToString().Substring(1,7);
             result.ReportNum = result.ReportNum.Substring(result.ReportNum.Length - 7);

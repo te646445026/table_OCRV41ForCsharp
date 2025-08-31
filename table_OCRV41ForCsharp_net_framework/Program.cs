@@ -166,7 +166,8 @@ namespace table_OCRV41ForCsharp_net_framework
                     {
                         Multiselect = true,
                         Title = "请选择文件",
-                        Filter = "json文件(*.json)|*.json"
+                        Filter = "json文件(*.json)|*.json",
+                        InitialDirectory = pathMessage.DataJsonFilePath
                     };
 
                     DialogResult result = fileDialog.ShowDialog();
