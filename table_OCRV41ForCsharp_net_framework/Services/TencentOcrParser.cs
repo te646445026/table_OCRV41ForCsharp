@@ -176,7 +176,27 @@ namespace table_OCRV41ForCsharp_net_framework.Services
                 int indexi;
                 bool isContain;
                 ObjsIndex("制造单位名称", objs, out indexj, out indexi, out isContain);
-                result.ManufacturingUnit = objs["Response"]["TableDetections"][indexj]["Cells"][indexi + 1]["Text"].ToString().Replace("\n", "").Replace("\r", "");
+                string manufacturingUnitText = objs["Response"]["TableDetections"][indexj]["Cells"][indexi + 1]["Text"].ToString().Replace("\n", "").Replace("\r", "");
+                
+                // 如果制造单位文本中包含"制造日期"，则提取制造单位部分
+                if (manufacturingUnitText.Contains("制造日期"))
+                {
+                    // 使用正则表达式提取制造单位部分（排除制造日期）
+                    Match match = Regex.Match(manufacturingUnitText, @"^(.+?)(?:制造日期|$)");
+                    if (match.Success && match.Groups[1].Value.Length > 0)
+                    {
+                        result.ManufacturingUnit = match.Groups[1].Value.Trim();
+                    }
+                    else
+                    {
+                        result.ManufacturingUnit = manufacturingUnitText.Replace("制造日期", "").Trim();
+                    }
+                }
+                else
+                {
+                    result.ManufacturingUnit = manufacturingUnitText;
+                }
+                
                 Console.WriteLine("制造单位: " + result.ManufacturingUnit);
             }
             catch
