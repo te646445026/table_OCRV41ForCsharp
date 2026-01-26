@@ -113,6 +113,7 @@ namespace table_OCRV41ForCsharp_net_framework
             services.AddSingleton<IKeyService, KeyService>();
             services.AddSingleton<IGetFileContentAsBase64Service, GetFileContentAsBase64Service>();
             services.AddSingleton<IOcrParser, TencentOcrParser>();
+            services.AddSingleton<IWordTemplateFiller, WordTemplateFiller>();
 
             // 使用工厂模式注册 TencentOcrService
             services.AddSingleton<IOcrService>(provider =>
@@ -222,7 +223,7 @@ namespace table_OCRV41ForCsharp_net_framework
                         }
 
                         // 生成Word文档
-                        GenerateWordDocuments(resultForJsonMessage, workPath, jsonPath);
+                        GenerateWordDocuments(serviceProvider, resultForJsonMessage, workPath, jsonPath);
                     }
                     catch (Exception ex)
                     {
@@ -349,7 +350,7 @@ namespace table_OCRV41ForCsharp_net_framework
                         }
 
                         // 生成Word文档
-                        GenerateWordDocuments(resultForJsonMessage, workPath, jsonPath);
+                        GenerateWordDocuments(serviceProvider, resultForJsonMessage, workPath, jsonPath);
                     }
                     catch (Exception ex)
                     {
@@ -371,532 +372,52 @@ namespace table_OCRV41ForCsharp_net_framework
         /// <summary>
         /// 生成Word文档
         /// </summary>
-        private static void GenerateWordDocuments(OcrResult resultForJsonMessage, string workPath, string jsonPath)
+        private static void GenerateWordDocuments(IServiceProvider serviceProvider, OcrResult resultForJsonMessage, string workPath, string jsonPath)
         {
-            try
+            var wordFiller = serviceProvider.GetService<IWordTemplateFiller>();
+
+            string recordTemplatePath = Path.Combine(workPath, "限速器测试记录模板5.docx");
+            string reportTemplatePath = Path.Combine(workPath, "限速器测试报告模板5.docx");
+
+            if (!File.Exists(recordTemplatePath) || !File.Exists(reportTemplatePath))
             {
-                string recordTemplatePath = workPath + "\\限速器测试记录模板4.docx";
-                string reportTemplatePath = workPath + "\\限速器测试报告模板4.docx";
+                throw new FileNotFoundException("模板文件不存在，请确保模板文件限速器测试记录模板5.docx和限速器测试报告模板5.docx存在于工作目录中", 
+                    !File.Exists(recordTemplatePath) ? recordTemplatePath : reportTemplatePath);
+            }
 
-                if (!File.Exists(recordTemplatePath) || !File.Exists(reportTemplatePath))
+            logger.LogInformation("打开Word模板文件");
+
+            using (var docStreamRec = new FileStream(recordTemplatePath, FileMode.Open, FileAccess.Read))
+            using (var documentRec = new XWPFDocument(docStreamRec))
+            {
+                wordFiller.FillTemplate(documentRec, resultForJsonMessage);
+
+                string outPath = Path.Combine(workPath, $"{resultForJsonMessage.DeviceCode}_{Path.GetFileNameWithoutExtension(jsonPath)}_{resultForJsonMessage.NextYearFlag}.docx");
+                using (var outFile = new FileStream(outPath, FileMode.Create, FileAccess.Write))
                 {
-                    throw new FileNotFoundException("模板文件不存在", !File.Exists(recordTemplatePath) ? recordTemplatePath : reportTemplatePath);
+                    documentRec.Write(outFile);
                 }
-
-                logger.LogInformation("打开Word模板文件");
-                FileStream docFlieRec = new FileStream(recordTemplatePath, FileMode.OpenOrCreate, FileAccess.ReadWrite);
-                FileStream docFlieRep = new FileStream(reportTemplatePath, FileMode.OpenOrCreate, FileAccess.ReadWrite);
-
-                XWPFDocument documentRec = new XWPFDocument(docFlieRec);
-                XWPFDocument documentRep = new XWPFDocument(docFlieRep);
-
-                IList<XWPFParagraph> paragraphsRec = documentRec.Paragraphs;
-                Console.WriteLine(paragraphsRec[2].ParagraphText + resultForJsonMessage.ReportNum);
-
-                IList<XWPFTable> tablesRec = documentRec.Tables;
-                XWPFTable tableRec0 = tablesRec[0];
-                XWPFTable tableRec1 = tablesRec[1];
-
-                IList<XWPFParagraph> paragraphsRep = documentRep.Paragraphs;
-                Console.WriteLine(paragraphsRep[3].ParagraphText + resultForJsonMessage.ReportNum);
-
-                IList<XWPFTable> tablesRep = documentRep.Tables;
-                XWPFTable tableRep0 = tablesRep[0];
-                XWPFTable tableRep1 = tablesRep[1];
-
-                logger.LogInformation("开始填充Word文档内容");
-
-                // 填充记录模板
-                FillRecordTemplate(tableRec0, paragraphsRec, resultForJsonMessage);
-
-                // 保存记录文件
-                string outPath = string.Format(workPath + "\\{0}_{1}_{2}.docx",
-                                                    resultForJsonMessage.DeviceCode,
-                                                    Path.GetFileNameWithoutExtension(jsonPath),
-                                                    resultForJsonMessage.NextYearFlag);
-                FileStream outFile = new FileStream(outPath, FileMode.OpenOrCreate, FileAccess.ReadWrite);
-                documentRec.Write(outFile);
-                outFile.Close();
-                documentRec.Close();
-                docFlieRec.Close();
 
                 Console.WriteLine("{0}打印记录完成", Path.GetFileNameWithoutExtension(jsonPath));
                 Console.WriteLine("-------------------------------------------------------");
                 Console.WriteLine("");
+            }
 
-                // 填充报告模板
-                FillReportTemplate(tableRep0, paragraphsRep, resultForJsonMessage);
+            using (var docStreamRep = new FileStream(reportTemplatePath, FileMode.Open, FileAccess.Read))
+            using (var documentRep = new XWPFDocument(docStreamRep))
+            {
+                wordFiller.FillTemplate(documentRep, resultForJsonMessage);
 
-                // 保存报告文件
-                string outPath2 = string.Format(workPath + "\\{0}.docx", resultForJsonMessage.DeviceCode);
+                string outPath2 = Path.Combine(workPath, $"{resultForJsonMessage.DeviceCode}.docx");
                 logger.LogInformation($"保存报告文件: {outPath2}");
-                FileStream outFile2 = new FileStream(outPath2, FileMode.OpenOrCreate, FileAccess.ReadWrite);
-                documentRep.Write(outFile2);
-                outFile2.Close();
-                documentRep.Close();
-                docFlieRep.Close();
+                using (var outFile2 = new FileStream(outPath2, FileMode.Create, FileAccess.Write))
+                {
+                    documentRep.Write(outFile2);
+                }
 
                 Console.WriteLine("{0}打印报告完成", Path.GetFileNameWithoutExtension(jsonPath));
                 Console.WriteLine("-------------------------------------------------------");
                 Console.WriteLine("");
-            }
-            catch (Exception ex)
-            {
-                logger.LogError(ex, "生成Word文档时发生错误");
-                throw;
-            }
-        }
-
-        /// <summary>
-        /// 填充记录模板
-        /// </summary>
-        private static void FillRecordTemplate(XWPFTable tableRec0, IList<XWPFParagraph> paragraphsRec, OcrResult resultForJsonMessage)
-        {
-            try
-            {
-                tableRec0.GetRow(0).GetCell(1).SetText(resultForJsonMessage.UserName);
-                tableRec0.GetRow(0).GetCell(1).Paragraphs[0].Alignment = ParagraphAlignment.LEFT;
-            }
-            catch (Exception ex)
-            {
-                logger.LogWarning(ex, "设置委托单位时出错");
-                Console.WriteLine("userName write error");
-            }
-
-            try
-            {
-                tableRec0.GetRow(1).GetCell(1).SetText(resultForJsonMessage.UserName);
-                tableRec0.GetRow(1).GetCell(1).Paragraphs[0].Alignment = ParagraphAlignment.LEFT;
-            }
-            catch (Exception ex)
-            {
-                logger.LogWarning(ex, "设置使用单位时出错");
-                Console.WriteLine("userName write error");
-            }
-
-            try
-            {
-                tableRec0.GetRow(2).GetCell(1).SetText(resultForJsonMessage.MaintenanceUnit);
-                tableRec0.GetRow(2).GetCell(1).Paragraphs[0].Alignment = ParagraphAlignment.LEFT;
-            }
-            catch
-            {
-                Console.WriteLine("MaintenanceUnit write error");
-            }
-
-            try
-            {
-                tableRec0.GetRow(3).GetCell(1).SetText(resultForJsonMessage.UsingAddress);
-                tableRec0.GetRow(3).GetCell(1).Paragraphs[0].Alignment = ParagraphAlignment.LEFT;
-            }
-            catch
-            {
-                Console.WriteLine("UsingAddress write error");
-            }
-
-            try
-            {
-                tableRec0.GetRow(4).GetCell(2).SetText(resultForJsonMessage.ElevatorDeviceType);
-                tableRec0.GetRow(4).GetCell(2).Paragraphs[0].Alignment = ParagraphAlignment.LEFT;
-            }
-            catch
-            {
-                Console.WriteLine("ElevatorDeviceType write error");
-            }
-
-            try
-            {
-                tableRec0.GetRow(4).GetCell(4).SetText(resultForJsonMessage.DeviceCode);
-                tableRec0.GetRow(4).GetCell(4).Paragraphs[0].Alignment = ParagraphAlignment.LEFT;
-            }
-            catch
-            {
-                Console.WriteLine("DeviceCode write error");
-            }
-
-            try
-            {
-                tableRec0.GetRow(5).GetCell(2).SetText(resultForJsonMessage.SerialNum);
-                tableRec0.GetRow(5).GetCell(2).Paragraphs[0].Alignment = ParagraphAlignment.LEFT;
-            }
-            catch
-            {
-                Console.WriteLine("SerialNum write error");
-            }
-
-            try
-            {
-                tableRec0.GetRow(5).GetCell(4).SetText(resultForJsonMessage.Speed + "m/s");
-                tableRec0.GetRow(5).GetCell(4).Paragraphs[0].Alignment = ParagraphAlignment.LEFT;
-            }
-            catch
-            {
-                Console.WriteLine("speed write error");
-            }
-
-            try
-            {
-                tableRec0.GetRow(6).GetCell(2).SetText(resultForJsonMessage.XiansuqiManufacturingUnit);
-                tableRec0.GetRow(6).GetCell(2).Paragraphs[0].Alignment = ParagraphAlignment.LEFT;
-            }
-            catch
-            {
-                Console.WriteLine("XiansuqiManufacturingUnit write error");
-            }
-
-            try
-            {
-                tableRec0.GetRow(7).GetCell(2).SetText(resultForJsonMessage.XiansuqiModel);
-                tableRec0.GetRow(7).GetCell(2).Paragraphs[0].Alignment = ParagraphAlignment.LEFT;
-            }
-            catch
-            {
-                Console.WriteLine("XiansuqiModel write error");
-            }
-
-            try
-            {
-                tableRec0.GetRow(7).GetCell(4).SetText(resultForJsonMessage.XiansuqiNum);
-                tableRec0.GetRow(7).GetCell(4).Paragraphs[0].Alignment = ParagraphAlignment.LEFT;
-            }
-            catch
-            {
-                Console.WriteLine("XiansuqiNum write error");
-            }
-
-            try
-            {
-                tableRec0.GetRow(8).GetCell(4).SetText(resultForJsonMessage.XiansuqiDirection);
-                tableRec0.GetRow(8).GetCell(4).Paragraphs[0].Alignment = ParagraphAlignment.LEFT;
-            }
-            catch
-            {
-                Console.WriteLine("XiansuqiDirection write error");
-            }
-
-            try
-            {
-                tableRec0.GetRow(10).GetCell(1).Paragraphs[0].CreateRun().SetText(resultForJsonMessage.XiansuqiElectricalUpSpeed + "m/s");
-                tableRec0.GetRow(10).GetCell(1).Paragraphs[0].Alignment = ParagraphAlignment.LEFT;
-            }
-            catch
-            {
-                Console.WriteLine("XiansuqiElectricalUpSpeed write error");
-            }
-
-            try
-            {
-                tableRec0.GetRow(10).GetCell(2).Paragraphs[0].CreateRun().SetText(resultForJsonMessage.XiansuqiElectricalDownSpeed + "m/s");
-                tableRec0.GetRow(10).GetCell(2).Paragraphs[0].Alignment = ParagraphAlignment.LEFT;
-            }
-            catch
-            {
-                Console.WriteLine("XiansuqiElectricalDownSpeed write error");
-            }
-
-            try
-            {
-                tableRec0.GetRow(10).GetCell(3).Paragraphs[0].CreateRun().SetText(resultForJsonMessage.XiansuqiMechanicalUpSpeed + "m/s");
-                tableRec0.GetRow(10).GetCell(3).Paragraphs[0].Alignment = ParagraphAlignment.LEFT;
-            }
-            catch
-            {
-                Console.WriteLine("XiansuqiMechanicalUpSpeed write error");
-            }
-
-            try
-            {
-                tableRec0.GetRow(10).GetCell(4).Paragraphs[0].CreateRun().SetText(resultForJsonMessage.XiansuqiMechanicalDownSpeed + "m/s");
-                tableRec0.GetRow(10).GetCell(4).Paragraphs[0].Alignment = ParagraphAlignment.LEFT;
-            }
-            catch
-            {
-                Console.WriteLine("XiansuqiMechanicalDownSpeed write error");
-            }
-
-            try
-            {
-                tableRec0.GetRow(25).GetCell(0).Paragraphs[0].CreateRun().SetText(resultForJsonMessage.Date);
-                tableRec0.GetRow(25).GetCell(0).Paragraphs[0].Alignment = ParagraphAlignment.RIGHT;
-            }
-            catch
-            {
-                Console.WriteLine("date write error");
-            }
-
-            try
-            {
-                paragraphsRec[2].CreateRun().SetText(resultForJsonMessage.JianyanOrjiance?.Equals("检验") == true ? "D" : "E");
-                paragraphsRec[2].CreateRun().SetText(resultForJsonMessage.ReportNum);
-                paragraphsRec[2].Alignment = ParagraphAlignment.RIGHT;
-            }
-            catch
-            {
-                Console.WriteLine("reportNum2 write error");
-            }
-        }
-
-        /// <summary>
-        /// 填充报告模板
-        /// </summary>
-        private static void FillReportTemplate(XWPFTable tableRep0, IList<XWPFParagraph> paragraphsRep, OcrResult resultForJsonMessage)
-        {
-            try
-            {
-                tableRep0.GetRow(0).GetCell(1).SetText(resultForJsonMessage.UserName);
-                tableRep0.GetRow(0).GetCell(1).Paragraphs[0].Alignment = ParagraphAlignment.LEFT;
-            }
-            catch
-            {
-                Console.WriteLine("userName write error");
-            }
-
-            try
-            {
-                tableRep0.GetRow(1).GetCell(1).SetText(resultForJsonMessage.UserName);
-                tableRep0.GetRow(1).GetCell(1).Paragraphs[0].Alignment = ParagraphAlignment.LEFT;
-            }
-            catch
-            {
-                Console.WriteLine("userName write error");
-            }
-
-            try
-            {
-                tableRep0.GetRow(2).GetCell(1).SetText(resultForJsonMessage.MaintenanceUnit);
-                tableRep0.GetRow(2).GetCell(1).Paragraphs[0].Alignment = ParagraphAlignment.LEFT;
-            }
-            catch
-            {
-                Console.WriteLine("MaintenanceUnit write error");
-            }
-
-            try
-            {
-                tableRep0.GetRow(3).GetCell(1).SetText(resultForJsonMessage.UsingAddress);
-                tableRep0.GetRow(3).GetCell(1).Paragraphs[0].Alignment = ParagraphAlignment.LEFT;
-            }
-            catch
-            {
-                Console.WriteLine("UsingAddress write error");
-            }
-
-            try
-            {
-                tableRep0.GetRow(4).GetCell(2).SetText(resultForJsonMessage.ElevatorDeviceType);
-                tableRep0.GetRow(4).GetCell(2).Paragraphs[0].Alignment = ParagraphAlignment.LEFT;
-            }
-            catch
-            {
-                Console.WriteLine("ElevatorDeviceType write error");
-            }
-
-            try
-            {
-                tableRep0.GetRow(4).GetCell(4).SetText(resultForJsonMessage.DeviceCode);
-                tableRep0.GetRow(4).GetCell(4).Paragraphs[0].Alignment = ParagraphAlignment.LEFT;
-            }
-            catch
-            {
-                Console.WriteLine("DeviceCode write error");
-            }
-
-            try
-            {
-                tableRep0.GetRow(5).GetCell(2).SetText(resultForJsonMessage.SerialNum);
-                tableRep0.GetRow(5).GetCell(2).Paragraphs[0].Alignment = ParagraphAlignment.LEFT;
-            }
-            catch
-            {
-                Console.WriteLine("SerialNum write error");
-            }
-
-            try
-            {
-                tableRep0.GetRow(5).GetCell(4).SetText(resultForJsonMessage.Speed + "m/s");
-                tableRep0.GetRow(5).GetCell(4).Paragraphs[0].Alignment = ParagraphAlignment.LEFT;
-            }
-            catch
-            {
-                Console.WriteLine("Speed write error");
-            }
-
-            try
-            {
-                tableRep0.GetRow(6).GetCell(2).SetText(resultForJsonMessage.XiansuqiManufacturingUnit);
-                tableRep0.GetRow(6).GetCell(2).Paragraphs[0].Alignment = ParagraphAlignment.LEFT;
-            }
-            catch
-            {
-                Console.WriteLine("XiansuqiManufacturingUnit write error");
-            }
-
-            try
-            {
-                tableRep0.GetRow(7).GetCell(2).SetText(resultForJsonMessage.XiansuqiModel);
-                tableRep0.GetRow(7).GetCell(2).Paragraphs[0].Alignment = ParagraphAlignment.LEFT;
-            }
-            catch
-            {
-                Console.WriteLine("XiansuqiModel write error");
-            }
-
-            try
-            {
-                tableRep0.GetRow(7).GetCell(4).SetText(resultForJsonMessage.XiansuqiNum);
-                tableRep0.GetRow(7).GetCell(4).Paragraphs[0].Alignment = ParagraphAlignment.LEFT;
-            }
-            catch
-            {
-                Console.WriteLine("XiansuqiNum write error");
-            }
-
-
-            try
-            {
-                tableRep0.GetRow(8).GetCell(4).SetText(resultForJsonMessage.XiansuqiDirection);
-                tableRep0.GetRow(8).GetCell(4).Paragraphs[0].Alignment = ParagraphAlignment.LEFT;
-            }
-            catch
-            {
-                Console.WriteLine("XiansuqiDirection write error");
-            }
-
-            try
-            {
-                tableRep0.GetRow(10).GetCell(1).Paragraphs[0].CreateRun().SetText(resultForJsonMessage.XiansuqiElectricalUpSpeed + "m/s");
-                tableRep0.GetRow(10).GetCell(1).Paragraphs[0].Alignment = ParagraphAlignment.LEFT;
-            }
-            catch
-            {
-                Console.WriteLine("XiansuqiElectricalUpSpeed write error");
-            }
-
-            try
-            {
-                tableRep0.GetRow(10).GetCell(2).Paragraphs[0].CreateRun().SetText(resultForJsonMessage.XiansuqiElectricalDownSpeed + "m/s");
-                tableRep0.GetRow(10).GetCell(2).Paragraphs[0].Alignment = ParagraphAlignment.LEFT;
-            }
-            catch
-            {
-                Console.WriteLine("XiansuqiElectricalDownSpeed write error");
-            }
-
-            try
-            {
-                tableRep0.GetRow(10).GetCell(3).Paragraphs[0].CreateRun().SetText(resultForJsonMessage.XiansuqiMechanicalUpSpeed + "m/s");
-                tableRep0.GetRow(10).GetCell(3).Paragraphs[0].Alignment = ParagraphAlignment.LEFT;
-            }
-            catch
-            {
-                Console.WriteLine("XiansuqiMechanicalUpSpeed write error");
-            }
-
-            try
-            {
-                tableRep0.GetRow(10).GetCell(4).Paragraphs[0].CreateRun().SetText(resultForJsonMessage.XiansuqiMechanicalDownSpeed + "m/s");
-                tableRep0.GetRow(10).GetCell(4).Paragraphs[0].Alignment = ParagraphAlignment.LEFT;
-            }
-            catch
-            {
-                Console.WriteLine("XiansuqiMechanicalDownSpeed write error");
-            }
-
-            try
-            {
-                tableRep0.GetRow(22).GetCell(0).SetText(resultForJsonMessage.Date);
-                tableRep0.GetRow(22).GetCell(0).Paragraphs[0].Alignment = ParagraphAlignment.LEFT;
-            }
-            catch
-            {
-                Console.WriteLine("Date write error");
-            }
-
-            try
-            {
-                tableRep0.GetRow(23).GetCell(0).SetText(resultForJsonMessage.ShenheDate);
-                tableRep0.GetRow(23).GetCell(0).Paragraphs[0].Alignment = ParagraphAlignment.LEFT;
-            }
-            catch
-            {
-                Console.WriteLine("ShenheDate write error");
-            }
-
-            try
-            {
-                tableRep0.GetRow(24).GetCell(0).SetText(resultForJsonMessage.ShenheDate);
-                tableRep0.GetRow(24).GetCell(0).Paragraphs[0].Alignment = ParagraphAlignment.LEFT;
-            }
-            catch
-            {
-                Console.WriteLine("ShenheDate write error");
-            }
-
-            try
-            {
-                paragraphsRep[3].CreateRun().SetText(resultForJsonMessage.JianyanOrjiance?.Equals("检验") == true ? "D" : "E");
-                paragraphsRep[3].CreateRun().SetText(resultForJsonMessage.ReportNum);
-                paragraphsRep[3].Alignment = ParagraphAlignment.RIGHT;
-
-
-                var baseLength = paragraphsRep[16].ParagraphText.Length;
-
-                // 调整paragraphsRep[15]的文本长度
-                string userNameText = resultForJsonMessage.UserName;
-                if (userNameText.Length < baseLength)
-                {
-                    userNameText = userNameText.PadRight(baseLength-2, ' ');
-                }
-
-                // 检查段落是否已有Run，如果有则复制格式
-                var newRun = paragraphsRep[15].CreateRun();
-                if (paragraphsRep[15].Runs.Count > 1)
-                {
-                    var existingRun = paragraphsRep[15].Runs[0];
-                    // 复制字体格式
-                    newRun.FontSize = existingRun.FontSize;
-                    newRun.FontFamily = existingRun.FontFamily;
-                    newRun.IsItalic = existingRun.IsItalic;
-                    newRun.Underline = UnderlinePatterns.Single;
-                }
-                else
-                {
-                    newRun.Underline = UnderlinePatterns.Single; // 设置下划线
-                }
-                newRun.SetText(userNameText);
-
-                // 调整paragraphsRep[17]的文本长度
-                string dateText = resultForJsonMessage.Date;
-                if (dateText.Length < baseLength)
-                {
-                    dateText = dateText.PadRight(baseLength+6, ' ');
-                }
-
-                newRun = paragraphsRep[17].CreateRun();
-                if (paragraphsRep[17].Runs.Count > 1)
-                {
-                    var existingRun = paragraphsRep[17].Runs[0];
-                    // 复制字体格式
-                    newRun.FontSize = existingRun.FontSize;
-                    newRun.FontFamily = existingRun.FontFamily;
-                    newRun.IsItalic = existingRun.IsItalic;
-                    newRun.Underline = UnderlinePatterns.Single;
-                }
-                else
-                {
-                    newRun.Underline = UnderlinePatterns.Single; // 设置下划线
-                }
-                newRun.SetText(dateText);               
-
-
-
-                paragraphsRep[53].CreateRun().SetText(resultForJsonMessage.JianyanOrjiance?.Equals("检验") == true ? "D" : "E");
-                paragraphsRep[53].CreateRun().SetText(resultForJsonMessage.ReportNum);
-                paragraphsRep[53].Alignment = ParagraphAlignment.RIGHT;
-            }
-            catch
-            {
-                Console.WriteLine("reportNum2 write error");
             }
         }
 
