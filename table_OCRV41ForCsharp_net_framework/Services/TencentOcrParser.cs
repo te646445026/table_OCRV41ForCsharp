@@ -12,6 +12,13 @@ namespace table_OCRV41ForCsharp_net_framework.Services
 {
     public class TencentOcrParser : IOcrParser
     {
+        private readonly ISpeedValueGenerator _speedValueGenerator;
+
+        public TencentOcrParser(ISpeedValueGenerator speedValueGenerator)
+        {
+            _speedValueGenerator = speedValueGenerator;
+        }
+
         public OcrResult Parse(string json)
         {
             var objs = JObject.Parse(json);
@@ -591,6 +598,14 @@ namespace table_OCRV41ForCsharp_net_framework.Services
             Console.WriteLine("└─────────────────────────────────────────┘");
             Console.ResetColor();
             Console.WriteLine();
+            Console.ForegroundColor = ConsoleColor.Yellow;
+            Console.WriteLine("📊 正在生成实测速度值...");
+            Console.ResetColor();
+            Console.WriteLine();
+
+            // 自动生成实测速度值 [21]-[36]
+            _speedValueGenerator.GenerateTestValues(result);
+
             Console.ForegroundColor = ConsoleColor.Yellow;
             Console.WriteLine("📊 正在生成Word报告，请稍候...");
             Console.ResetColor();

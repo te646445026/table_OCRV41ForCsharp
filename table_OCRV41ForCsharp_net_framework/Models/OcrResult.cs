@@ -29,5 +29,25 @@ namespace table_OCRV41ForCsharp_net_framework.Models
         public string XiansuqiMechanicalUpSpeed { get; set; }
         public string XiansuqiMechanicalDownSpeed { get; set; }
         public string ElevatorDeviceType { get; set; }
+
+        // 实测速度值 — 平均值 [21]-[24]
+        public string ElectricalUpAvg { get; set; }
+        public string ElectricalDownAvg { get; set; }
+        public string MechanicalUpAvg { get; set; }
+        public string MechanicalDownAvg { get; set; }
+
+        // 实测速度值 — 第1/2/3次 [25]-[36]
+        public string ElectricalUpTest1 { get; set; }
+        public string ElectricalUpTest2 { get; set; }
+        public string ElectricalUpTest3 { get; set; }
+        public string ElectricalDownTest1 { get; set; }
+        public string ElectricalDownTest2 { get; set; }
+        public string ElectricalDownTest3 { get; set; }
+        public string MechanicalUpTest1 { get; set; }
+        public string MechanicalUpTest2 { get; set; }
+        public string MechanicalUpTest3 { get; set; }
+        public string MechanicalDownTest1 { get; set; }
+        public string MechanicalDownTest2 { get; set; }
+        public string MechanicalDownTest3 { get; set; }
     }
 }

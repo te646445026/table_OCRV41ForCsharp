@@ -113,6 +113,7 @@ namespace table_OCRV41ForCsharp_net_framework
             services.AddSingleton<IKeyService, KeyService>();
             services.AddSingleton<IGetFileContentAsBase64Service, GetFileContentAsBase64Service>();
             services.AddSingleton<IOcrParser, TencentOcrParser>();
+            services.AddSingleton<ISpeedValueGenerator, SpeedValueGenerator>();
             services.AddSingleton<IWordTemplateFiller, WordTemplateFiller>();
 
             // 使用工厂模式注册 TencentOcrService

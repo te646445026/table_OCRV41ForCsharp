@@ -91,7 +91,7 @@ namespace table_OCRV41ForCsharp_net_framework.Services
                 rawValue = prefix + rawValue;
             }
 
-            if (mapping.AppendUnit && !string.IsNullOrEmpty(rawValue))
+            if (mapping.AppendUnit && !string.IsNullOrEmpty(rawValue) && rawValue != "/")
             {
                 rawValue = rawValue + mapping.Unit;
             }
